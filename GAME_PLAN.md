@@ -1,4 +1,4 @@
-# Idle Amusement Park - Game Plan
+# Idlepark - Game Plan
 
 ## Overview
 A mobile-first, browser-based idle game where players build and manage an amusement park. Inspired by Planet Coaster's charm, but designed for casual, commitment-free play with offline progression.
@@ -166,11 +166,8 @@ Global and per-attraction upgrades:
 - **Maintenance** - Reduces costs, increases efficiency
 - **VIP Access** - Premium income boost
 
-### 3. Prestige System (Long-term loop)
-- "Expand to new location" = prestige reset
-- Earn **Stars** based on total earnings
-- Stars provide permanent multipliers
-- Unlock new attraction types
+### 3. Prestige System (Post-MVP)
+*Skipped for MVP - implement later*
 
 ### 4. Offline Progression
 **No cap** - players earn full income for entire time away. Respects player time.
@@ -195,21 +192,21 @@ showOfflineReward(offlineEarnings);
 ### Screen Layout
 ```
 ┌─────────────────────────┐
-│  $1,234,567   ⭐ 5      │  <- Header (sticky)
-│  $123/sec               │
+│  $12,345      👥 847    │  <- Header (money + guest count)
+│  +$24/sec               │
 ├─────────────────────────┤
 │                         │
-│    ┌───┐  ┌───┐        │
-│    │🎠 │  │🎡 │        │  <- Park View (scrollable)
-│    └───┘  └───┘        │
-│  ┌───┐  ┌───┐  ┌───┐   │
-│  │🎢 │  │🏪 │  │🍕 │   │
-│  └───┘  └───┘  └───┘   │
-│       👥 👥 👥          │  <- Animated guests
+│  ┌─────────────────┐    │
+│  │ 🎠 Carousel     │    │  <- Attraction cards
+│  │ Lvl 3  $8/sec   │    │     (scrollable list)
+│  └─────────────────┘    │
+│  ┌─────────────────┐    │
+│  │ 🎡 Ferris Wheel │    │
+│  │ Lvl 1  $15/sec  │    │
+│  └─────────────────┘    │
 │                         │
 ├─────────────────────────┤
-│  🏗️    📊    🎁    ⚙️   │  <- Bottom Nav
-│ Build  Stats  Gifts  More│
+│     🏗️ Build New        │  <- Bottom action
 └─────────────────────────┘
 ```
 
@@ -220,11 +217,11 @@ showOfflineReward(offlineEarnings);
 - **Pull down** → Force sync/save
 
 ### Visual Polish
-- Idle animations on all attractions
-- Guest sprites walking around
+- Idle animations on attraction cards
 - Particle effects on purchases
-- Satisfying number animations
+- Satisfying number animations (money ticking up)
 - Haptic feedback on actions
+- Smooth card transitions
 
 ---
 
@@ -308,6 +305,7 @@ interface GameSave {
 
 | Decision | Choice |
 |----------|--------|
+| Game name | **Idlepark** |
 | Art style | Custom pixel art |
 | Sound | Skip for MVP |
 | Storage | IndexedDB (via Dexie.js) |
@@ -315,4 +313,9 @@ interface GameSave {
 | Deployment | GitHub Pages |
 | Gameplay | Ultra simple, no tutorial needed |
 | Economy | Grounded, real-world numbers (Planet Coaster style) |
+| Guests | Number display only (no animated sprites) |
+| Starting state | $10K, buy first ride yourself |
+| Failure | Possible - can run out of money |
+| Park layout | Auto-arranged collection (no grid placement) |
+| Prestige | Skip for MVP |
 | Monetization | TBD (not priority for MVP) |
