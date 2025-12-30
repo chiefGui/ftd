@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { GameState, GameStore, Slot } from '../core/types';
 import { getBuildingById } from '../data/buildings';
+import { getPerkById } from '../data/perks';
 import {
   STARTING_MONEY,
   STARTING_SLOTS,
@@ -28,6 +29,7 @@ const createInitialState = (): GameState => ({
   ticketPrice: STARTING_TICKET_PRICE,
   slots: [],
   unlockedSlots: STARTING_SLOTS,
+  unlockedPerks: [],
   lastSaveTime: Date.now(),
   totalEarnings: 0,
   gameStartedAt: Date.now(),
@@ -204,6 +206,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return SLOT_UNLOCK_COSTS[index];
   },
 
+  buyPerk: (perkId: string) => {
+    const state = get();
+    const perk = getPerkById(perkId);
+    if (!perk) return false;
+    if (state.unlockedPerks.includes(perkId)) return false;
+    if (state.money < perk.cost) return false;
+
+    set({
+      money: state.money - perk.cost,
+      unlockedPerks: [...state.unlockedPerks, perkId],
+    });
+    get().save();
+    return true;
+  },
+
+  hasPerk: (perkId: string) => {
+    return get().unlockedPerks.includes(perkId);
+  },
+
   setTicketPrice: (price: number) => {
     const clampedPrice = Math.max(TICKET_PRICE_MIN, Math.min(TICKET_PRICE_MAX, price));
     set({ ticketPrice: clampedPrice });
@@ -292,6 +313,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ticketPrice: state.ticketPrice,
       slots: state.slots,
       unlockedSlots: state.unlockedSlots,
+      unlockedPerks: state.unlockedPerks,
       lastSaveTime: Date.now(),
       totalEarnings: state.totalEarnings,
       gameStartedAt: state.gameStartedAt,
@@ -305,7 +327,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const saved = await loadGame();
     if (saved) {
       const ticketPrice = saved.state.ticketPrice ?? STARTING_TICKET_PRICE;
-      set({ ...saved.state, ticketPrice });
+      const unlockedPerks = saved.state.unlockedPerks ?? [];
+      set({ ...saved.state, ticketPrice, unlockedPerks });
       if (saved.milestones) {
         useMilestoneStore.getState().loadProgress(saved.milestones);
       }

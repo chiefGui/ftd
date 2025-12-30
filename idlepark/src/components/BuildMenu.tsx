@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBuildingsByCategory } from '../data/buildings';
+import { getPerkById } from '../data/perks';
 import { useGameStore } from '../store/gameStore';
 import { formatMoney } from '../utils/formatters';
 import type { BuildingCategory, BuildingDefinition } from '../core/types';
@@ -22,6 +23,7 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingDefinition | null>(null);
 
   const money = useGameStore((s) => s.money);
+  const hasPerk = useGameStore((s) => s.hasPerk);
 
   const filteredBuildings = getBuildingsByCategory(activeCategory);
 
@@ -78,7 +80,27 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-8">
           {filteredBuildings.map((building) => {
+            const isLocked = building.requiredPerk && !hasPerk(building.requiredPerk);
             const canAfford = money >= building.baseCost;
+            const requiredPerkData = building.requiredPerk ? getPerkById(building.requiredPerk) : null;
+
+            if (isLocked) {
+              return (
+                <div
+                  key={building.id}
+                  className="w-full p-4 rounded-xl text-left flex items-center gap-4 bg-park-bg opacity-40"
+                >
+                  <span className="text-4xl grayscale">{building.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate text-park-muted">{building.name}</div>
+                    <div className="text-sm text-park-muted mt-1 flex items-center gap-1">
+                      <span>🔒</span>
+                      <span>Requires {requiredPerkData?.name ?? 'upgrade'}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <motion.button

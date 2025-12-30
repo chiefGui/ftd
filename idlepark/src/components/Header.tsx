@@ -5,10 +5,12 @@ import { formatMoney, formatNumber } from '../utils/formatters';
 import { SettingsMenu } from './SettingsMenu';
 import { TicketPriceModal } from './TicketPriceModal';
 import { StatsPanel } from './StatsPanel';
+import { UpgradesMenu } from './UpgradesMenu';
 
 export function Header() {
   const [showStats, setShowStats] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const [showUpgrades, setShowUpgrades] = useState(false);
   const ticketPrice = useGameStore((s) => s.ticketPrice);
 
   const money = useGameStore((s) => s.money);
@@ -35,7 +37,15 @@ export function Header() {
               {stats.netIncome >= 0 ? '+' : ''}{formatMoney(stats.netIncome)}/s
             </span>
           </div>
-          <SettingsMenu />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowUpgrades(true)}
+              className="w-10 h-10 rounded-full bg-park-bg flex items-center justify-center text-xl active:bg-park-muted/30"
+            >
+              🌟
+            </button>
+            <SettingsMenu />
+          </div>
         </div>
 
         {/* Bottom row: All stats in a compact line */}
@@ -81,6 +91,11 @@ export function Header() {
       {/* Ticket Price Modal */}
       <AnimatePresence>
         {showTicketModal && <TicketPriceModal onClose={() => setShowTicketModal(false)} />}
+      </AnimatePresence>
+
+      {/* Upgrades Menu */}
+      <AnimatePresence>
+        {showUpgrades && <UpgradesMenu onClose={() => setShowUpgrades(false)} />}
       </AnimatePresence>
     </>
   );
