@@ -15,14 +15,14 @@ export const GUEST_UNHAPPY_LEAVE_RATE = 0.20; // Extra 20% leave if unhappy
 
 // === TICKET PRICING ===
 export const TICKET_PRICE_MIN = 5;
-export const TICKET_PRICE_MAX = 100;
+export const TICKET_PRICE_MAX = 500;
 export const TICKET_PRICE_STEP = 5;
 
 // Demand curve: higher price = fewer guests want to come
 export const calculateDemand = (ticketPrice: number): number => {
-  // At $5 = 100% demand, at $50 = ~25% demand, at $100 = ~5% demand
+  // At $5 = 100% demand, at $100 = ~50% demand, at $500 = ~5% demand
   const normalized = (ticketPrice - TICKET_PRICE_MIN) / (TICKET_PRICE_MAX - TICKET_PRICE_MIN);
-  return Math.max(0.05, 1 - Math.pow(normalized, 0.7));
+  return Math.max(0.05, 1 - Math.pow(normalized, 0.6));
 };
 
 // === SATISFACTION ===

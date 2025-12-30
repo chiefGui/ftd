@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
+import { GuestFeed } from './components/GuestFeed';
 import { SlotGrid } from './components/SlotGrid';
 import { GameOverModal } from './components/GameOverModal';
 import { OfflineModal } from './components/OfflineModal';
@@ -44,6 +45,7 @@ function App() {
   return (
     <div className="h-full flex flex-col bg-park-bg">
       <Header />
+      <GuestFeed />
 
       <main className="flex-1 overflow-y-auto">
         <SlotGrid />
