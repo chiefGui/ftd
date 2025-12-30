@@ -1,6 +1,6 @@
 // UI Components - barrel export for cleaner imports
 export { Header } from './Header';
-export { GuestFeed } from './GuestFeed';
+export { NotificationBubble } from './NotificationBubble';
 export { SlotGrid } from './SlotGrid';
 export { SlotDetail } from './SlotDetail';
 export { BuildMenu } from './BuildMenu';

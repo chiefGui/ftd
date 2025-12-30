@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
-import { GuestFeed } from './components/GuestFeed';
+import { NotificationBubble } from './components/NotificationBubble';
 import { SlotGrid } from './components/SlotGrid';
 import { GameOverModal } from './components/GameOverModal';
 import { OfflineModal } from './components/OfflineModal';
 import { useGameStore } from './store/gameStore';
 import { useGameLoop } from './hooks/useGameLoop';
+import { useNotifications } from './hooks/useNotifications';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +32,9 @@ function App() {
   // Start game loop
   useGameLoop();
 
+  // Start notification system
+  useNotifications();
+
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-park-bg">
@@ -45,11 +49,13 @@ function App() {
   return (
     <div className="h-full flex flex-col bg-park-bg">
       <Header />
-      <GuestFeed />
 
       <main className="flex-1 overflow-y-auto">
         <SlotGrid />
       </main>
+
+      {/* Floating notification bubble */}
+      <NotificationBubble />
 
       <GameOverModal />
 
