@@ -93,19 +93,43 @@ export function StatsPanel({ onClose }: Props) {
             </div>
           </div>
 
+          {/* Prestige / Reputation */}
+          <div className="bg-park-bg rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-lg font-semibold">⭐ Prestige</span>
+              <span className="text-2xl font-bold text-park-accent">{stats.reputation}</span>
+            </div>
+            <p className="text-sm text-park-muted">
+              Your park's fame. Higher prestige attracts more guests.
+            </p>
+            {stats.reputation > 0 && (
+              <p className="text-xs text-park-muted mt-2">
+                💡 Upgrade rides to increase their prestige
+              </p>
+            )}
+            {stats.reputation === 0 && (
+              <p className="text-sm text-park-danger mt-2">
+                Build rides to gain prestige!
+              </p>
+            )}
+          </div>
+
           {/* Guest Count - Simple */}
           <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-lg font-semibold">👥 Guests</span>
               <span className="text-2xl font-bold">{Math.floor(stats.currentGuests)}</span>
             </div>
+            <p className="text-sm text-park-muted mb-3">
+              Visitors in your park. More guests = more income.
+            </p>
             <ProgressBar
               value={stats.maxGuests > 0 ? stats.currentGuests / stats.maxGuests : 0}
               color="bg-park-accent"
             />
             <div className="flex justify-between text-xs text-park-muted mt-2">
               <span>0</span>
-              <span>Max: {stats.maxGuests}</span>
+              <span>Capacity: {stats.maxGuests}</span>
             </div>
             {!hasRides && (
               <p className="text-sm text-park-danger mt-3">
@@ -116,7 +140,7 @@ export function StatsPanel({ onClose }: Props) {
 
           {/* Happiness - Two bars */}
           <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-lg font-semibold">
                 {stats.overallSatisfaction >= 0.8 ? '😊' : stats.overallSatisfaction >= 0.5 ? '😐' : '😟'} Happiness
               </span>
@@ -125,6 +149,9 @@ export function StatsPanel({ onClose }: Props) {
                 text={stats.overallSatisfaction >= 0.8 ? 'Happy' : stats.overallSatisfaction >= 0.5 ? 'Okay' : 'Unhappy'}
               />
             </div>
+            <p className="text-sm text-park-muted mb-4">
+              How guests feel. Happy guests stay longer!
+            </p>
 
             {/* Rides */}
             <div className="mb-4">
@@ -173,12 +200,15 @@ export function StatsPanel({ onClose }: Props) {
 
           {/* Money - Simple */}
           <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-lg font-semibold">💰 Money</span>
               <span className={`text-xl font-bold ${stats.netIncome >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
                 {stats.netIncome >= 0 ? '+' : ''}{formatMoney(stats.netIncome)}/s
               </span>
             </div>
+            <p className="text-sm text-park-muted mb-3">
+              Income per second after costs.
+            </p>
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
