@@ -67,9 +67,7 @@ export function SlotGrid() {
           if (slot) {
             const building = getBuildingById(slot.buildingId);
             const statLine = getSlotStatLine(slot);
-            // Show stars for levels (max 5 visible)
-            const levelStars = '★'.repeat(Math.min(slot.level, 5));
-            const hasMoreLevels = slot.level > 5;
+            const levelStars = '★'.repeat(slot.level);
 
             return (
               <motion.button
@@ -80,7 +78,7 @@ export function SlotGrid() {
               >
                 {/* Level stars badge */}
                 <div className="absolute top-1.5 right-1.5 text-[10px] text-yellow-400">
-                  {levelStars}{hasMoreLevels && <span className="text-park-muted">+</span>}
+                  {levelStars}
                 </div>
                 <motion.span
                   animate={{ rotate: [0, 3, -3, 0] }}

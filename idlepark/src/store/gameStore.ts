@@ -9,6 +9,7 @@ import {
   TICKET_PRICE_MIN,
   TICKET_PRICE_MAX,
   SLOT_UNLOCK_COSTS,
+  MAX_BUILDING_LEVEL,
   GUEST_ARRIVAL_RATE,
   GUEST_DEPARTURE_RATE,
   GUEST_UNHAPPY_LEAVE_RATE,
@@ -123,8 +124,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   upgradeSlot: (slotId: string) => {
     const state = get();
-    const slotIndex = state.slots.findIndex((s) => s.id === slotId);
-    if (slotIndex === -1) return false;
+    const slot = state.slots.find((s) => s.id === slotId);
+    if (!slot) return false;
+
+    // Check max level
+    if (slot.level >= MAX_BUILDING_LEVEL) return false;
 
     const cost = state.calculateUpgradeCost(slotId);
     if (state.money < cost) return false;

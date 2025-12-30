@@ -5,7 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { getBuildingById } from '../data/buildings';
 import { formatMoney } from '../utils/formatters';
-import { DEMOLISH_REFUND_RATE, STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER } from '../data/constants';
+import { DEMOLISH_REFUND_RATE, STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER, MAX_BUILDING_LEVEL } from '../data/constants';
 
 type Props = {
   slot: Slot;
@@ -25,8 +25,9 @@ export function SlotDetail({ slot, onClose }: Props) {
   const building = getBuildingById(slot.buildingId);
   if (!building) return null;
 
+  const isMaxLevel = slot.level >= MAX_BUILDING_LEVEL;
   const upgradeCost = calculateUpgradeCost(slot.id);
-  const canUpgrade = money >= upgradeCost;
+  const canUpgrade = !isMaxLevel && money >= upgradeCost;
 
   const currentMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
   const nextMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level);
@@ -168,41 +169,47 @@ export function SlotDetail({ slot, onClose }: Props) {
             </div>
           </div>
 
-          {/* Upgrade Button with Benefits */}
-          <div className="space-y-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleUpgrade}
-              disabled={!canUpgrade}
-              className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors relative overflow-hidden ${
-                canUpgrade
-                  ? 'bg-park-accent text-white'
-                  : 'bg-park-muted/30 text-park-muted'
-              }`}
-            >
-              {justUpgraded ? (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                >
-                  ✨ Upgraded!
-                </motion.span>
-              ) : (
-                <>⬆️ Upgrade • {formatMoney(upgradeCost)}</>
-              )}
-            </motion.button>
+          {/* Upgrade Button or MAX badge */}
+          {isMaxLevel ? (
+            <div className="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/50 text-center">
+              <span className="text-yellow-400 font-bold text-lg">★★★ MAX LEVEL</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleUpgrade}
+                disabled={!canUpgrade}
+                className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors relative overflow-hidden ${
+                  canUpgrade
+                    ? 'bg-park-accent text-white'
+                    : 'bg-park-muted/30 text-park-muted'
+                }`}
+              >
+                {justUpgraded ? (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                  >
+                    ✨ Upgraded!
+                  </motion.span>
+                ) : (
+                  <>⬆️ Upgrade • {formatMoney(upgradeCost)}</>
+                )}
+              </motion.button>
 
-            {/* What you'll get */}
-            {canUpgrade && !justUpgraded && (
-              <div className="flex justify-center gap-4 text-xs">
-                {stats.gains.map((g, i) => (
-                  <span key={i} className="text-park-success">
-                    +{g.isMoney ? formatMoney(g.gain) : g.gain} {g.label.toLowerCase()}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+              {/* What you'll get */}
+              {canUpgrade && !justUpgraded && (
+                <div className="flex justify-center gap-4 text-xs">
+                  {stats.gains.map((g, i) => (
+                    <span key={i} className="text-park-success">
+                      +{g.isMoney ? formatMoney(g.gain) : g.gain} {g.label.toLowerCase()}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <motion.button
             whileTap={{ scale: 0.95 }}
