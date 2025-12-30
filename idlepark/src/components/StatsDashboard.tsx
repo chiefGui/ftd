@@ -13,7 +13,7 @@ type Props = {
 type Tab = 'overview' | 'buildings' | 'income' | 'insights';
 
 // Calculate per-building stats
-function getBuildingStats(slot: Slot) {
+function getBuildingStats(slot: Slot, currentGuests: number) {
   const def = getBuildingById(slot.buildingId);
   if (!def) return null;
 
@@ -21,18 +21,13 @@ function getBuildingStats(slot: Slot) {
   const maintenanceMultiplier = Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, slot.level - 1);
   const maintenance = def.maintenanceCost * maintenanceMultiplier;
 
-  let income = 0;
-  let incomeType = '';
+  // Calculate spending rate for this building (used for relative comparison)
+  const spendingRate = def.category === 'shop'
+    ? (def.spendingRate ?? 0) * levelMultiplier
+    : 0;
 
-  if (def.category === 'shop') {
-    // Shops earn per guest per second - estimate with 50 guests
-    income = (def.spendingRate ?? 0) * levelMultiplier * 50;
-    incomeType = 'shop';
-  } else if (def.category === 'ride') {
-    // Rides don't earn directly but attract guests
-    income = 0;
-    incomeType = 'prestige';
-  }
+  // Actual income based on current guests
+  const income = spendingRate * currentGuests;
 
   const profit = income - maintenance;
   const baseCost = def.baseCost;
@@ -41,61 +36,51 @@ function getBuildingStats(slot: Slot) {
     (_, i) => Math.floor(baseCost * Math.pow(1.15, i + 1))
   ).reduce((a, b) => a + b, 0);
 
-  // ROI = profit per second / total invested (higher = better)
-  const roi = totalInvested > 0 ? (profit / totalInvested) * 3600 : 0; // per hour
-
   return {
     slot,
     def,
     level: slot.level,
+    spendingRate,
     income,
     maintenance,
     profit,
     totalInvested,
-    roi,
-    incomeType,
     prestige: def.category === 'ride' ? Math.floor((def.prestige ?? 0) * levelMultiplier) : 0,
     capacity: def.category === 'ride' ? Math.floor((def.rideCapacity ?? 0) * levelMultiplier) : 0,
     coverage: def.category === 'infrastructure' ? Math.floor((def.coverage ?? 0) * levelMultiplier) : 0,
   };
 }
 
-// Bar chart component
-function BarChart({
+// Cost bar chart component (for maintenance breakdown)
+function CostBarChart({
   data,
   maxValue,
-  color = 'bg-park-accent',
-  showLabels = true,
 }: {
   data: { label: string; value: number; emoji?: string }[];
   maxValue?: number;
-  color?: string;
-  showLabels?: boolean;
 }) {
   const max = maxValue ?? Math.max(...data.map(d => Math.abs(d.value)), 1);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {data.map((item, i) => (
-        <div key={i} className="flex items-center gap-2">
-          {item.emoji && <span className="w-6 text-center">{item.emoji}</span>}
-          <div className="flex-1">
-            {showLabels && (
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-park-muted truncate max-w-[120px]">{item.label}</span>
-                <span className={item.value >= 0 ? 'text-park-success' : 'text-park-danger'}>
-                  {item.value >= 0 ? '+' : ''}{formatMoney(item.value)}/s
-                </span>
-              </div>
-            )}
-            <div className="h-2 bg-park-muted/20 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, (Math.abs(item.value) / max) * 100)}%` }}
-                transition={{ duration: 0.5, delay: i * 0.05 }}
-                className={`h-full rounded-full ${item.value >= 0 ? color : 'bg-park-danger'}`}
-              />
+        <div key={i}>
+          <div className="flex items-center justify-between text-sm mb-1">
+            <div className="flex items-center gap-2">
+              {item.emoji && <span>{item.emoji}</span>}
+              <span className="text-park-muted">{item.label}</span>
             </div>
+            <span className="text-park-danger font-medium">
+              {formatMoney(item.value)}/s
+            </span>
+          </div>
+          <div className="h-2 bg-park-muted/20 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, (Math.abs(item.value) / max) * 100)}%` }}
+              transition={{ duration: 0.5, delay: i * 0.05 }}
+              className="h-full rounded-full bg-park-danger"
+            />
           </div>
         </div>
       ))}
@@ -250,12 +235,12 @@ export function StatsDashboard({ onClose }: Props) {
 
   const stats = calculateParkStats();
 
-  // Calculate all building stats
+  // Calculate all building stats using actual guest count
   const buildingStats = useMemo(() => {
     return slots
-      .map(getBuildingStats)
+      .map(slot => getBuildingStats(slot, guests))
       .filter((s): s is NonNullable<typeof s> => s !== null);
-  }, [slots]);
+  }, [slots, guests]);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -328,15 +313,16 @@ export function StatsDashboard({ onClose }: Props) {
       });
     }
 
-    // Worst ROI
-    const worstROI = [...buildingStats]
-      .filter(b => b.def.category === 'shop' && b.roi < 0)
-      .sort((a, b) => a.roi - b.roi)[0];
-    if (worstROI) {
+    // Shops losing money (profit < 0)
+    const losingShops = [...buildingStats]
+      .filter(b => b.def.category === 'shop' && b.profit < 0)
+      .sort((a, b) => a.profit - b.profit);
+    if (losingShops.length > 0) {
+      const worst = losingShops[0];
       result.push({
-        emoji: worstROI.def.emoji,
-        title: `${worstROI.def.name} is losing money`,
-        description: `Consider demolishing or upgrading`,
+        emoji: worst.def.emoji,
+        title: `${worst.def.name} is losing money`,
+        description: `Costs ${formatMoney(Math.abs(worst.profit))}/s more than it earns`,
         type: 'warning',
       });
     }
@@ -671,13 +657,12 @@ export function StatsDashboard({ onClose }: Props) {
                       -{formatMoney(stats.totalMaintenance)}/s
                     </span>
                   </div>
-                  <BarChart
+                  <CostBarChart
                     data={[
                       { label: 'Rides', value: maintenanceByCategory.ride, emoji: '🎢' },
                       { label: 'Shops', value: maintenanceByCategory.shop, emoji: '🛍️' },
                       { label: 'Facilities', value: maintenanceByCategory.infrastructure, emoji: '🚻' },
                     ].filter(d => d.value > 0)}
-                    color="bg-park-danger"
                   />
                 </div>
 
