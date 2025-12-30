@@ -11,17 +11,26 @@ import { UpgradesMenu } from './UpgradesMenu';
 function NeedIndicator({
   emoji,
   value,
-  label
+  label,
+  capacity,
+  guests,
 }: {
   emoji: string;
   value: number;
   label: string;
+  capacity: number;
+  guests: number;
 }) {
   const percent = Math.round(value * 100);
   const color = percent >= 80 ? 'bg-park-success' : percent >= 50 ? 'bg-park-warning' : 'bg-park-danger';
+  const status = percent >= 80 ? 'Good' : percent >= 50 ? 'Strained' : 'Critical';
+  const guestCount = Math.floor(guests);
+  const tooltipText = capacity > 0 && guestCount > 0
+    ? `${label}: ${status} (${capacity}/${guestCount})`
+    : `${label}: ${status}`;
 
   return (
-    <div className="flex flex-col items-center gap-0.5" title={`${label}: ${percent}%`}>
+    <div className="flex flex-col items-center gap-0.5" title={tooltipText}>
       <span className="text-xs">{emoji}</span>
       <div className="w-6 h-1 bg-park-muted/30 rounded-full overflow-hidden">
         <motion.div
@@ -138,10 +147,10 @@ export function Header() {
             <div className="flex items-center gap-3">
               {/* Mini Need Bars */}
               <div className="hidden sm:flex items-center gap-2 pr-2 border-r border-park-muted/30">
-                <NeedIndicator emoji="🎢" value={stats.entertainmentSatisfaction} label="Entertainment" />
-                <NeedIndicator emoji="🍔" value={stats.hungerSatisfaction} label="Hunger" />
-                <NeedIndicator emoji="🚻" value={stats.comfortSatisfaction} label="Comfort" />
-                <NeedIndicator emoji="🛡️" value={stats.safetySatisfaction} label="Safety" />
+                <NeedIndicator emoji="🎢" value={stats.entertainmentSatisfaction} label="Entertainment" capacity={stats.rideCapacity} guests={guests} />
+                <NeedIndicator emoji="🍔" value={stats.hungerSatisfaction} label="Hunger" capacity={stats.totalHungerCapacity} guests={guests} />
+                <NeedIndicator emoji="🚻" value={stats.comfortSatisfaction} label="Comfort" capacity={stats.totalComfortCapacity} guests={guests} />
+                <NeedIndicator emoji="🛡️" value={stats.safetySatisfaction} label="Safety" capacity={stats.totalSafetyCapacity} guests={guests} />
               </div>
 
               {/* Ticket Price Button */}

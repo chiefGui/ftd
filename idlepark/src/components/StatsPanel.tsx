@@ -71,12 +71,22 @@ function NeedCard({
 }) {
   const percent = Math.round(value * 100);
   const status = percent >= 80 ? 'good' : percent >= 50 ? 'warning' : 'critical';
+  const statusLabel = status === 'good' ? 'Good' : status === 'warning' ? 'Strained' : 'Critical';
   const colors = {
     good: { bg: 'bg-park-success/10', border: 'border-park-success/30', text: 'text-park-success', stroke: 'stroke-park-success' },
     warning: { bg: 'bg-park-warning/10', border: 'border-park-warning/30', text: 'text-park-warning', stroke: 'stroke-park-warning' },
     critical: { bg: 'bg-park-danger/10', border: 'border-park-danger/30', text: 'text-park-danger', stroke: 'stroke-park-danger' },
   };
   const c = colors[status];
+  const guestCount = Math.floor(guests);
+
+  // Show ratio: capacity / guests needed
+  const getRatioText = () => {
+    if (capacity === 0 && guestCount === 0) return tip;
+    if (capacity === 0) return `Need capacity for ${guestCount} guests`;
+    if (guestCount === 0) return `${capacity} ready, no guests yet`;
+    return `${capacity} / ${guestCount} guests`;
+  };
 
   return (
     <motion.div
@@ -92,10 +102,10 @@ function NeedCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-0.5">
             <span className="font-semibold text-sm">{name}</span>
-            <span className={`text-lg font-bold ${c.text}`}>{percent}%</span>
+            <span className={`text-sm font-bold ${c.text}`}>{statusLabel}</span>
           </div>
           <div className="text-xs text-park-muted">
-            {capacity > 0 ? `${capacity} capacity for ${Math.floor(guests)} guests` : tip}
+            {getRatioText()}
           </div>
         </div>
       </div>

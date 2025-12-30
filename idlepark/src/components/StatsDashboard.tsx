@@ -547,21 +547,26 @@ export function StatsDashboard({ onClose }: Props) {
                     ].map((need) => {
                       const percent = Math.round(need.value * 100);
                       const color = percent >= 80 ? 'bg-park-success' : percent >= 50 ? 'bg-park-warning' : 'bg-park-danger';
+                      const statusLabel = percent >= 80 ? 'Good' : percent >= 50 ? 'Strained' : 'Critical';
+                      const guestCount = Math.floor(stats.currentGuests);
+                      const ratioText = need.capacity === 0 && guestCount === 0
+                        ? `Build ${need.hint}`
+                        : need.capacity === 0
+                        ? `Need ${need.hint}`
+                        : `${need.capacity} / ${guestCount}`;
                       return (
                         <div key={need.label}>
                           <div className="flex items-center justify-between text-sm mb-1">
                             <div className="flex items-center gap-2">
                               <span>{need.emoji}</span>
                               <span className="text-park-muted">{need.label}</span>
+                              <span className="text-xs text-park-muted">({ratioText})</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-park-muted">{need.capacity} capacity</span>
-                              <span className={`font-medium ${
-                                percent >= 80 ? 'text-park-success' : percent >= 50 ? 'text-park-warning' : 'text-park-danger'
-                              }`}>
-                                {percent}%
-                              </span>
-                            </div>
+                            <span className={`font-medium ${
+                              percent >= 80 ? 'text-park-success' : percent >= 50 ? 'text-park-warning' : 'text-park-danger'
+                            }`}>
+                              {statusLabel}
+                            </span>
                           </div>
                           <div className="h-2 bg-park-muted/20 rounded-full overflow-hidden">
                             <motion.div
