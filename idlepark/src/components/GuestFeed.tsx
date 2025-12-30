@@ -1,6 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
+import {
+  POSITIVE_MESSAGES,
+  NEGATIVE_MESSAGES,
+  NEUTRAL_MESSAGES,
+  NEW_BUILDING_MESSAGES,
+  pickRandom,
+  randomGuestName,
+} from '../data/guestMessages';
 
 type FeedMessage = {
   id: number;
@@ -8,46 +16,6 @@ type FeedMessage = {
   text: string;
   type: 'positive' | 'negative' | 'neutral';
 };
-
-const GUEST_NAMES = [
-  'Alex', 'Jordan', 'Sam', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Quinn',
-  'Avery', 'Jamie', 'Drew', 'Skyler', 'Reese', 'Charlie', 'Frankie', 'Jessie',
-];
-
-const POSITIVE_MESSAGES = [
-  { emoji: '🎢', text: 'just rode the {ride} - AMAZING!' },
-  { emoji: '😍', text: 'this park is incredible!' },
-  { emoji: '🎉', text: 'best day ever at this park!' },
-  { emoji: '🍦', text: 'the ice cream here is so good!' },
-  { emoji: '🌟', text: 'definitely coming back again!' },
-  { emoji: '📸', text: 'taking so many photos!' },
-  { emoji: '🎠', text: 'my kids love this place!' },
-  { emoji: '👍', text: 'great value for the ticket price!' },
-];
-
-const NEGATIVE_MESSAGES = [
-  { emoji: '😤', text: 'these ticket prices are insane!' },
-  { emoji: '😡', text: 'waited forever in line...' },
-  { emoji: '🚫', text: 'not enough restrooms!' },
-  { emoji: '💸', text: 'way too expensive here' },
-  { emoji: '😞', text: 'leaving early, not worth it' },
-  { emoji: '🥵', text: 'need more shade and benches!' },
-  { emoji: '😒', text: 'the queues are ridiculous' },
-];
-
-const NEUTRAL_MESSAGES = [
-  { emoji: '🚶', text: 'just arrived at the park!' },
-  { emoji: '🎟️', text: 'got my ticket, let\'s go!' },
-  { emoji: '🗺️', text: 'checking out the map...' },
-  { emoji: '☕', text: 'grabbing a coffee first' },
-  { emoji: '👀', text: 'so many rides to choose from!' },
-];
-
-const NEW_BUILDING_MESSAGES = [
-  { emoji: '🆕', text: 'ooh they built a new {building}!' },
-  { emoji: '🎊', text: 'new {building} just opened!' },
-  { emoji: '👀', text: 'can\'t wait to try the new {building}!' },
-];
 
 export function GuestFeed() {
   const [messages, setMessages] = useState<FeedMessage[]>([]);
@@ -67,15 +35,13 @@ export function GuestFeed() {
     if (guests < 1) return;
 
     const interval = setInterval(() => {
-      const name = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
+      const name = randomGuestName();
+      const satisfaction = stats.overallSatisfaction;
+      const priceRatio = ticketPrice / 50;
+      const rand = Math.random();
+
       let pool: typeof POSITIVE_MESSAGES;
       let type: FeedMessage['type'];
-
-      // Choose message pool based on satisfaction and price
-      const satisfaction = stats.overallSatisfaction;
-      const priceRatio = ticketPrice / 50; // normalized around $50
-
-      const rand = Math.random();
 
       if (satisfaction < 0.4 || priceRatio > 2) {
         // Unhappy - more negative messages
@@ -99,18 +65,14 @@ export function GuestFeed() {
         }
       }
 
-      const template = pool[Math.floor(Math.random() * pool.length)];
-      const text = `${name}: "${template.text}"`;
-
-      const newMessage: FeedMessage = {
+      const template = pickRandom(pool);
+      setMessages(prev => [{
         id: messageIdRef.current++,
         emoji: template.emoji,
-        text,
+        text: `${name}: "${template.text}"`,
         type,
-      };
-
-      setMessages(prev => [newMessage, ...prev].slice(0, 3));
-    }, 3000 + Math.random() * 2000); // 3-5 seconds between messages
+      }, ...prev].slice(0, 3));
+    }, 3000 + Math.random() * 2000);
 
     return () => clearInterval(interval);
   }, [guests, stats.overallSatisfaction, ticketPrice]);
@@ -118,17 +80,14 @@ export function GuestFeed() {
   // Detect new buildings
   useEffect(() => {
     if (buildingCount > lastBuildingCountRef.current && lastBuildingCountRef.current > 0) {
-      const name = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
-      const template = NEW_BUILDING_MESSAGES[Math.floor(Math.random() * NEW_BUILDING_MESSAGES.length)];
-
-      const newMessage: FeedMessage = {
+      const template = pickRandom(NEW_BUILDING_MESSAGES);
+      const newMsg: FeedMessage = {
         id: messageIdRef.current++,
         emoji: template.emoji,
-        text: `${name}: "${template.text.replace('{building}', 'attraction')}"`,
+        text: `${randomGuestName()}: "${template.text.replace('{building}', 'attraction')}"`,
         type: 'positive',
       };
-
-      setMessages(prev => [newMessage, ...prev].slice(0, 3));
+      setMessages(prev => [newMsg, ...prev].slice(0, 3));
     }
     lastBuildingCountRef.current = buildingCount;
   }, [buildingCount]);

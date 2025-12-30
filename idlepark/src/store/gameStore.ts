@@ -1,25 +1,24 @@
 import { create } from 'zustand';
-import type { GameState, GameStore, Slot, ParkStats } from '../core/types';
+import type { GameState, GameStore, Slot } from '../core/types';
 import { getBuildingById } from '../data/buildings';
 import {
   STARTING_MONEY,
   STARTING_SLOTS,
   MAX_SLOTS,
   STARTING_TICKET_PRICE,
-  GUESTS_PER_SLOT,
   TICKET_PRICE_MIN,
   TICKET_PRICE_MAX,
   SLOT_UNLOCK_COSTS,
-  UPGRADE_COST_MULTIPLIER,
-  STAT_LEVEL_MULTIPLIER,
-  MAINTENANCE_LEVEL_MULTIPLIER,
-  DEMOLISH_REFUND_RATE,
   GUEST_ARRIVAL_RATE,
   GUEST_DEPARTURE_RATE,
   GUEST_UNHAPPY_LEAVE_RATE,
-  calculateDemand,
 } from '../data/constants';
 import { saveGame, loadGame, clearSave } from './db';
+import {
+  calculateParkStats as calcStats,
+  calculateUpgradeCost as calcUpgradeCost,
+  calculateDemolishRefund,
+} from '../utils/parkCalculations';
 
 const createInitialState = (): GameState => ({
   money: STARTING_MONEY,
@@ -147,14 +146,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const slot = state.slots.find((s) => s.id === slotId);
     if (!slot) return 0;
 
-    const def = getBuildingById(slot.buildingId);
-    if (!def) return 0;
-
-    const totalInvested = def.baseCost +
-      Array.from({ length: slot.level - 1 }, (_, i) =>
-        Math.floor(def.baseCost * Math.pow(UPGRADE_COST_MULTIPLIER, i + 1))
-      ).reduce((a, b) => a + b, 0);
-    const refund = Math.floor(totalInvested * DEMOLISH_REFUND_RATE);
+    const refund = calculateDemolishRefund(slot);
 
     set({
       money: state.money + refund,
@@ -192,95 +184,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     get().save();
   },
 
-  calculateParkStats: (): ParkStats => {
+  calculateParkStats: () => {
     const state = get();
-
-    // Max guests from slots
-    const maxGuests = state.unlockedSlots * GUESTS_PER_SLOT;
-
-    // Calculate totals from buildings
-    let reputation = 0;
-    let rideCapacity = 0;
-    let totalSpendingRate = 0;
-    let infrastructureCoverage = 0;
-    let totalMaintenance = 0;
-
-    for (const slot of state.slots) {
-      const def = getBuildingById(slot.buildingId);
-      if (!def) continue;
-
-      const levelMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
-      const maintenanceMultiplier = Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, slot.level - 1);
-
-      totalMaintenance += def.maintenanceCost * maintenanceMultiplier;
-
-      if (def.category === 'ride') {
-        reputation += (def.prestige ?? 0) * levelMultiplier;
-        rideCapacity += (def.rideCapacity ?? 0) * levelMultiplier;
-      } else if (def.category === 'shop') {
-        totalSpendingRate += (def.spendingRate ?? 0) * levelMultiplier;
-      } else if (def.category === 'infrastructure') {
-        infrastructureCoverage += (def.coverage ?? 0) * levelMultiplier;
-      }
-    }
-
-    // Demand based on ticket price
-    const demandMultiplier = calculateDemand(state.ticketPrice);
-
-    // Target guests: reputation * demand (capped at max)
-    const targetGuests = Math.min(reputation * demandMultiplier, maxGuests);
-
-    // Current guests
-    const currentGuests = state.guests;
-
-    // === SATISFACTION ===
-    // Ride satisfaction: are rides overcrowded?
-    // If ride capacity >= guests, satisfaction = 100%
-    // Otherwise, ratio of capacity to guests
-    const rideSatisfaction = currentGuests > 0
-      ? Math.min(1, rideCapacity / currentGuests)
-      : 1;
-
-    // Facility satisfaction: enough infrastructure?
-    const facilitySatisfaction = currentGuests > 0
-      ? Math.min(1, infrastructureCoverage / currentGuests)
-      : 1;
-
-    // Overall: average of both (could weight differently)
-    const overallSatisfaction = (rideSatisfaction + facilitySatisfaction) / 2;
-
-    // === INCOME RATES (per second) ===
-    const ticketIncome = reputation * demandMultiplier * GUEST_ARRIVAL_RATE * state.ticketPrice;
-    const shopIncome = currentGuests * totalSpendingRate;
-    const netIncome = ticketIncome + shopIncome - totalMaintenance;
-
-    return {
-      maxGuests,
-      rideCapacity,
-      infrastructureCoverage,
-      reputation,
-      demandMultiplier,
-      targetGuests,
-      currentGuests,
-      rideSatisfaction,
-      facilitySatisfaction,
-      overallSatisfaction,
-      ticketIncome,
-      shopIncome,
-      totalMaintenance,
-      netIncome,
-    };
+    return calcStats({
+      slots: state.slots,
+      unlockedSlots: state.unlockedSlots,
+      ticketPrice: state.ticketPrice,
+      currentGuests: state.guests,
+    });
   },
 
   calculateUpgradeCost: (slotId: string) => {
     const state = get();
     const slot = state.slots.find((s) => s.id === slotId);
     if (!slot) return Infinity;
-
-    const def = getBuildingById(slot.buildingId);
-    if (!def) return Infinity;
-
-    return Math.floor(def.baseCost * Math.pow(UPGRADE_COST_MULTIPLIER, slot.level));
+    return calcUpgradeCost(slot);
   },
 
   applyOfflineProgress: () => {
