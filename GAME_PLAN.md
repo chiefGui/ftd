@@ -13,15 +13,24 @@ A mobile-first, browser-based idle game where players build and manage an amusem
 
 ---
 
-## Tech Stack (Recommended)
+## Tech Stack (Confirmed)
 
 ### Framework
 - **React + TypeScript** - Type safety, component-based, great tooling
 - **Vite** - Fast builds, excellent DX
 
 ### Styling
-- **Tailwind CSS** - Rapid UI development, mobile-first utilities
+- **Tailwind CSS v4** - Latest version, mobile-first utilities
 - **Framer Motion** - Smooth animations for that "juicy" feel
+
+### Art Style
+- **Custom pixel art** - Charming, distinctive, works great on mobile
+
+### Sound
+- Skip for MVP
+
+### Deployment
+- **GitHub Pages** - Static hosting
 
 ### State Management
 - **Zustand** - Simple, scalable, great for game state
@@ -280,24 +289,19 @@ interface GameSave {
 
 ---
 
-## Key Design Decisions to Confirm
+## Design Decisions (Confirmed)
 
-1. **Art style**: Emoji-based (fast), pixel art, or vector illustrations?
-2. **Sound**: Include music/SFX or silent-first?
-3. **Monetization**: Purely free, ads, or IAP? (affects design)
-4. **Prestige depth**: Simple reset or complex meta-progression?
-5. **Social features**: Leaderboards, sharing, none?
+| Decision | Choice |
+|----------|--------|
+| Art style | Custom pixel art |
+| Sound | Skip for MVP |
+| Storage | IndexedDB (via Dexie.js) |
+| Offline progress | No cap, full earnings |
+| Deployment | GitHub Pages |
+| Gameplay | Ultra simple, no tutorial needed |
 
----
+## Open Questions
 
-## Questions for You
-
-Before we start implementing, I'd like to confirm:
-
-1. **Tech stack OK?** React + Zustand + Tailwind + Framer Motion
-2. **IndexedDB for storage?** (vs simpler localStorage)
-3. **Art direction?** Quick emojis/icons vs custom art
-4. **Scope for MVP?** How minimal is minimal?
-5. **Any specific features you definitely want/don't want?**
-
-Let me know your thoughts and I'll refine the plan!
+1. **Monetization**: Purely free, ads, or IAP? (affects design)
+2. **Prestige depth**: Simple reset or complex meta-progression?
+3. **Social features**: Leaderboards, sharing, none?
