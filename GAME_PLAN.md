@@ -149,17 +149,16 @@ Global and per-attraction upgrades:
 - Unlock new attraction types
 
 ### 4. Offline Progression
+**No cap** - players earn full income for entire time away. Respects player time.
+
 ```typescript
 // On app open:
 const now = Date.now();
 const lastSave = gameState.lastSaveTime;
 const offlineSeconds = (now - lastSave) / 1000;
 
-// Cap at 8 hours (configurable)
-const cappedSeconds = Math.min(offlineSeconds, 8 * 60 * 60);
-
-// Calculate offline earnings (maybe at 50% efficiency)
-const offlineEarnings = calculateIncome(gameState) * cappedSeconds * 0.5;
+// Full earnings, no cap, no penalty
+const offlineEarnings = calculateIncome(gameState) * offlineSeconds;
 
 // Show "While you were away" modal
 showOfflineReward(offlineEarnings);
