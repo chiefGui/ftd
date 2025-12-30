@@ -39,6 +39,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     prestige: 60,
     rideCapacity: 50,
     description: 'See the whole park',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'log_flume',
@@ -51,6 +52,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     prestige: 100,
     rideCapacity: 40,
     description: 'Get soaked!',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'roller_coaster',
@@ -63,6 +65,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     prestige: 200,
     rideCapacity: 60,
     description: 'Ultimate thrill ride',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'drop_tower',
@@ -75,6 +78,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     prestige: 250,
     rideCapacity: 45,
     description: 'Free fall from the sky',
+    requiredPerk: 'park_rank_2',
   },
 
   // === SHOPS ===
@@ -137,6 +141,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 8,
     spendingRate: 0.35,
     description: 'Magical souvenirs',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'mcdonalds',
@@ -149,6 +154,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     spendingRate: 0.50,
     hungerCapacity: 50,
     description: 'Burgers and fries',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'dave_busters',
@@ -161,6 +167,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     spendingRate: 0.80,
     hungerCapacity: 30,
     description: 'Games and prizes',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'nike',
@@ -172,6 +179,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 40,
     spendingRate: 1.20,
     description: 'Just Do It',
+    requiredPerk: 'park_rank_2',
   },
 
   // === INFRASTRUCTURE ===
@@ -221,6 +229,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     safetyCapacity: 60,
     comfortCapacity: 20,
     description: 'Safety first',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'info_booth',
@@ -232,6 +241,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 2,
     comfortCapacity: 40,
     description: 'Help & directions',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'security',
@@ -243,6 +253,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 10,
     safetyCapacity: 100,
     description: 'Keep everyone safe',
+    requiredPerk: 'park_rank_2',
   },
 ];
 

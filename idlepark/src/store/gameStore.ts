@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { GameState, GameStore, Slot } from '../core/types';
 import { getBuildingById } from '../data/buildings';
+import { getPerkById, getBonusSlots } from '../data/perks';
 import {
   STARTING_MONEY,
   STARTING_SLOTS,
@@ -28,6 +29,7 @@ const createInitialState = (): GameState => ({
   ticketPrice: STARTING_TICKET_PRICE,
   slots: [],
   unlockedSlots: STARTING_SLOTS,
+  unlockedPerks: [],
   lastSaveTime: Date.now(),
   totalEarnings: 0,
   gameStartedAt: Date.now(),
@@ -184,7 +186,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   unlockNextSlot: () => {
     const state = get();
-    if (state.unlockedSlots >= MAX_SLOTS) return false;
+    const maxSlots = MAX_SLOTS + getBonusSlots(state.unlockedPerks);
+    if (state.unlockedSlots >= maxSlots) return false;
 
     const cost = state.getSlotUnlockCost();
     if (state.money < cost) return false;
@@ -202,6 +205,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const index = state.unlockedSlots - STARTING_SLOTS;
     if (index < 0 || index >= SLOT_UNLOCK_COSTS.length) return Infinity;
     return SLOT_UNLOCK_COSTS[index];
+  },
+
+  buyPerk: (perkId: string) => {
+    const state = get();
+    const perk = getPerkById(perkId);
+    if (!perk) return false;
+    if (state.unlockedPerks.includes(perkId)) return false;
+    if (state.money < perk.cost) return false;
+
+    set({
+      money: state.money - perk.cost,
+      unlockedPerks: [...state.unlockedPerks, perkId],
+    });
+    get().save();
+    return true;
+  },
+
+  hasPerk: (perkId: string) => {
+    return get().unlockedPerks.includes(perkId);
   },
 
   setTicketPrice: (price: number) => {
@@ -236,15 +258,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const stats = state.calculateParkStats();
 
-    // Simulate equilibrium guest count
-    const equilibriumGuests = stats.overallSatisfaction >= 0.8
+    // Calculate what guests would stabilize to at equilibrium
+    // But cap it - don't let offline guests exceed what player actually had by too much
+    const theoreticalEquilibrium = stats.overallSatisfaction >= 0.8
       ? Math.min(stats.targetGuests, stats.maxGuests)
       : Math.min(stats.targetGuests * stats.overallSatisfaction, stats.maxGuests);
 
-    // Calculate offline earnings
-    const ticketIncome = stats.reputation * stats.demandMultiplier * GUEST_ARRIVAL_RATE * state.ticketPrice;
-    const shopIncome = equilibriumGuests * (stats.shopIncome / Math.max(1, stats.currentGuests));
-    const netPerSecond = ticketIncome + shopIncome - stats.totalMaintenance;
+    // Cap equilibrium: don't jump more than 20% above saved guests (gradual growth feels more natural)
+    // But allow it to drop if park would lose guests
+    const equilibriumGuests = Math.min(
+      theoreticalEquilibrium,
+      Math.max(state.guests * 1.2, state.guests) // At most 20% increase from saved
+    );
+
+    // Calculate offline earnings using EQUILIBRIUM rates
+    // At equilibrium: guests arriving ≈ guests leaving (to maintain stable count)
+    // Guest turnover rate = equilibriumGuests * GUEST_DEPARTURE_RATE
+    const guestTurnoverRate = equilibriumGuests * GUEST_DEPARTURE_RATE;
+    const ticketIncomePerSecond = guestTurnoverRate * state.ticketPrice;
+
+    // Shop income: guests in park * total spending rate
+    // We need totalSpendingRate, extract it from stats
+    const totalSpendingRate = stats.currentGuests > 0
+      ? stats.shopIncome / stats.currentGuests
+      : 0;
+    const shopIncomePerSecond = equilibriumGuests * totalSpendingRate;
+
+    const netPerSecond = ticketIncomePerSecond + shopIncomePerSecond - stats.totalMaintenance;
 
     const offlineEarnings = netPerSecond * offlineSeconds;
     let newMoney = state.money + offlineEarnings;
@@ -292,6 +332,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ticketPrice: state.ticketPrice,
       slots: state.slots,
       unlockedSlots: state.unlockedSlots,
+      unlockedPerks: state.unlockedPerks,
       lastSaveTime: Date.now(),
       totalEarnings: state.totalEarnings,
       gameStartedAt: state.gameStartedAt,
@@ -305,7 +346,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const saved = await loadGame();
     if (saved) {
       const ticketPrice = saved.state.ticketPrice ?? STARTING_TICKET_PRICE;
-      set({ ...saved.state, ticketPrice });
+      const unlockedPerks = saved.state.unlockedPerks ?? [];
+      set({ ...saved.state, ticketPrice, unlockedPerks });
       if (saved.milestones) {
         useMilestoneStore.getState().loadProgress(saved.milestones);
       }
