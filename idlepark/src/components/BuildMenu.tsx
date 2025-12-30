@@ -27,13 +27,13 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
 
   const getStatLabel = (building: BuildingDefinition) => {
     if (building.category === 'ride') {
-      return `⭐${building.prestige} prestige • ${building.rideCapacity} cap`;
+      return `Attracts ${building.prestige} • Fits ${building.rideCapacity}`;
     }
     if (building.category === 'shop') {
-      return `${formatMoney(building.spendingRate ?? 0)}/guest/s`;
+      return `Earns ${formatMoney(building.spendingRate ?? 0)}/guest`;
     }
     if (building.category === 'infrastructure') {
-      return `Covers ${building.coverage} guests`;
+      return `Keeps ${building.coverage} guests happy`;
     }
     return '';
   };
