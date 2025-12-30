@@ -1,9 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { GameState } from '../core/types';
+import type { GameState, MilestoneProgress } from '../core/types';
 
 interface SaveRecord {
   id: string;
   state: GameState;
+  milestones?: MilestoneProgress;
   savedAt: number;
 }
 
@@ -15,17 +16,30 @@ db.version(1).stores({
   saves: 'id',
 });
 
-export async function saveGame(state: GameState): Promise<void> {
+export async function saveGame(
+  state: GameState,
+  milestones?: MilestoneProgress
+): Promise<void> {
   await db.saves.put({
     id: 'main',
     state,
+    milestones,
     savedAt: Date.now(),
   });
 }
 
-export async function loadGame(): Promise<GameState | null> {
+export interface LoadedSave {
+  state: GameState;
+  milestones?: MilestoneProgress;
+}
+
+export async function loadGame(): Promise<LoadedSave | null> {
   const record = await db.saves.get('main');
-  return record?.state ?? null;
+  if (!record) return null;
+  return {
+    state: record.state,
+    milestones: record.milestones,
+  };
 }
 
 export async function clearSave(): Promise<void> {

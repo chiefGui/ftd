@@ -5,29 +5,38 @@ import { NotificationBubble } from './components/NotificationBubble';
 import { SlotGrid } from './components/SlotGrid';
 import { GameOverModal } from './components/GameOverModal';
 import { OfflineModal } from './components/OfflineModal';
+import { MilestoneUnlockModal } from './components/MilestoneUnlockModal';
 import { useGameStore } from './store/gameStore';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useNotifications } from './hooks/useNotifications';
+import { useMilestoneStore } from './store/milestoneStore';
+import type { Milestone } from './core/types';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [offlineEarnings, setOfflineEarnings] = useState<number | null>(null);
+  const [offlineData, setOfflineData] = useState<{
+    earnings: number;
+    milestones: Milestone[];
+  } | null>(null);
 
   const load = useGameStore((s) => s.load);
   const applyOfflineProgress = useGameStore((s) => s.applyOfflineProgress);
+  const clearPendingUnlocks = useMilestoneStore((s) => s.clearPendingUnlocks);
 
   // Load saved game on mount
   useEffect(() => {
     const init = async () => {
       await load();
-      const earnings = applyOfflineProgress();
-      if (Math.abs(earnings) > 1) {
-        setOfflineEarnings(earnings);
+      // Clear any pending unlocks from previous session before applying offline progress
+      clearPendingUnlocks();
+      const result = applyOfflineProgress();
+      if (Math.abs(result.earnings) > 1 || result.milestones.length > 0) {
+        setOfflineData(result);
       }
       setIsLoading(false);
     };
     init();
-  }, [load, applyOfflineProgress]);
+  }, [load, applyOfflineProgress, clearPendingUnlocks]);
 
   // Start game loop
   useGameLoop();
@@ -59,11 +68,16 @@ function App() {
 
       <GameOverModal />
 
+      {/* Milestone unlock modal (real-time) */}
+      <MilestoneUnlockModal />
+
+      {/* Offline progress modal */}
       <AnimatePresence>
-        {offlineEarnings !== null && (
+        {offlineData !== null && (
           <OfflineModal
-            earnings={offlineEarnings}
-            onClose={() => setOfflineEarnings(null)}
+            earnings={offlineData.earnings}
+            milestones={offlineData.milestones}
+            onClose={() => setOfflineData(null)}
           />
         )}
       </AnimatePresence>

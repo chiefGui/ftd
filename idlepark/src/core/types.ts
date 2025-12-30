@@ -67,6 +67,31 @@ export type GameState = {
   isGameOver: boolean;
 };
 
+// ============================================
+// MILESTONE TYPES
+// ============================================
+
+export type MilestoneRequirement =
+  | { type: 'peakGuests'; amount: number };
+
+export type MilestoneReward =
+  | { type: 'money'; amount: number };
+
+export type Milestone = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  requirement: MilestoneRequirement;
+  reward: MilestoneReward;
+};
+
+export type MilestoneProgress = {
+  completedMilestones: string[];
+  completedAt: Record<string, number>;
+  peakGuests: number;
+};
+
 export type GameStore = GameState & {
   tick: (deltaSeconds: number) => void;
 
@@ -85,7 +110,7 @@ export type GameStore = GameState & {
   calculateParkStats: () => ParkStats;
   calculateUpgradeCost: (slotId: string) => number;
 
-  applyOfflineProgress: () => number;
+  applyOfflineProgress: () => { earnings: number; milestones: Milestone[] };
   resetGame: () => void;
   save: () => void;
   load: () => Promise<void>;

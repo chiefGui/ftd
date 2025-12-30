@@ -21,6 +21,7 @@ import {
   calculateUpgradeCost as calcUpgradeCost,
   calculateDemolishRefund,
 } from '../utils/parkCalculations';
+import { useMilestoneStore } from './milestoneStore';
 
 const createInitialState = (): GameState => ({
   money: STARTING_MONEY,
@@ -93,6 +94,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
       guests: newGuests,
       totalEarnings: newTotalEarnings,
     });
+
+    // Update peak guests and check milestones
+    const milestoneStore = useMilestoneStore.getState();
+    milestoneStore.updatePeakGuests(newGuests);
+    const newMilestones = milestoneStore.checkMilestones();
+
+    // Apply rewards for newly completed milestones
+    if (newMilestones.length > 0) {
+      let bonusMoney = 0;
+      for (const m of newMilestones) {
+        if (m.reward.type === 'money') {
+          bonusMoney += m.reward.amount;
+        }
+      }
+      if (bonusMoney > 0) {
+        set((s) => ({
+          money: s.money + bonusMoney,
+          totalEarnings: s.totalEarnings + bonusMoney,
+        }));
+      }
+    }
   },
 
   buildInSlot: (slotIndex: number, buildingId: string) => {
@@ -231,7 +253,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const now = Date.now();
     const offlineSeconds = (now - state.lastSaveTime) / 1000;
 
-    if (offlineSeconds <= 0) return 0;
+    if (offlineSeconds <= 0) return { earnings: 0, milestones: [] };
 
     const stats = state.calculateParkStats();
 
@@ -246,25 +268,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const netPerSecond = ticketIncome + shopIncome - stats.totalMaintenance;
 
     const offlineEarnings = netPerSecond * offlineSeconds;
-    const newMoney = state.money + offlineEarnings;
+    let newMoney = state.money + offlineEarnings;
+
+    // Check milestones based on equilibrium guests during offline
+    const milestoneStore = useMilestoneStore.getState();
+    milestoneStore.updatePeakGuests(equilibriumGuests);
+    const newMilestones = milestoneStore.checkMilestones();
+
+    // Apply milestone rewards
+    let bonusMoney = 0;
+    for (const m of newMilestones) {
+      if (m.reward.type === 'money') {
+        bonusMoney += m.reward.amount;
+      }
+    }
+    newMoney += bonusMoney;
 
     if (newMoney < 0) {
       set({ money: 0, isGameOver: true, lastSaveTime: now, guests: equilibriumGuests });
-      return offlineEarnings;
+      return { earnings: offlineEarnings, milestones: newMilestones };
     }
 
     set({
       money: newMoney,
       guests: equilibriumGuests,
-      totalEarnings: state.totalEarnings + Math.max(0, offlineEarnings),
+      totalEarnings: state.totalEarnings + Math.max(0, offlineEarnings) + bonusMoney,
       lastSaveTime: now,
     });
 
-    return offlineEarnings;
+    return { earnings: offlineEarnings, milestones: newMilestones };
   },
 
   resetGame: () => {
     clearSave();
+    useMilestoneStore.getState().reset();
     set(createInitialState());
   },
 
@@ -282,15 +319,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameStartedAt: state.gameStartedAt,
       isGameOver: state.isGameOver,
     };
-    saveGame(saveState);
+    const milestoneProgress = useMilestoneStore.getState().getProgress();
+    saveGame(saveState, milestoneProgress);
   },
 
   load: async () => {
     const saved = await loadGame();
     if (saved) {
-      const ticketPrice = saved.ticketPrice ?? STARTING_TICKET_PRICE;
-      const unlockedPerks = saved.unlockedPerks ?? [];
-      set({ ...saved, ticketPrice, unlockedPerks });
+      const ticketPrice = saved.state.ticketPrice ?? STARTING_TICKET_PRICE;
+      const unlockedPerks = saved.state.unlockedPerks ?? [];
+      set({ ...saved.state, ticketPrice, unlockedPerks });
+      if (saved.milestones) {
+        useMilestoneStore.getState().loadProgress(saved.milestones);
+      }
     }
   },
 }));
