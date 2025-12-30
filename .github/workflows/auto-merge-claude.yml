@@ -1,0 +1,40 @@
+name: Auto-merge Claude PRs
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-and-merge:
+    # Only run for PRs from claude/* branches
+    if: startsWith(github.head_ref, 'claude/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: idlepark/package-lock.json
+
+      - name: Install dependencies
+        working-directory: idlepark
+        run: npm ci
+
+      - name: Build
+        working-directory: idlepark
+        run: npm run build
+
+      - name: Auto-merge PR
+        if: success()
+        run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
