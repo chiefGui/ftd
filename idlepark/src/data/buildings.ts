@@ -65,7 +65,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     prestige: 200,
     rideCapacity: 60,
     description: 'Ultimate thrill ride',
-    requiredPerk: 'park_rank_3',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'drop_tower',
@@ -78,7 +78,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     prestige: 250,
     rideCapacity: 45,
     description: 'Free fall from the sky',
-    requiredPerk: 'park_rank_3',
+    requiredPerk: 'park_rank_2',
   },
 
   // === SHOPS ===
@@ -161,7 +161,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 25,
     spendingRate: 0.80,
     description: 'Games and prizes',
-    requiredPerk: 'park_rank_3',
+    requiredPerk: 'park_rank_2',
   },
   {
     id: 'nike',
@@ -173,7 +173,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 40,
     spendingRate: 1.20,
     description: 'Just Do It',
-    requiredPerk: 'park_rank_3',
+    requiredPerk: 'park_rank_2',
   },
 
   // === INFRASTRUCTURE ===
@@ -245,7 +245,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     maintenanceCost: 10,
     coverage: 150,
     description: 'Keep everyone safe',
-    requiredPerk: 'park_rank_3',
+    requiredPerk: 'park_rank_2',
   },
 ];
 

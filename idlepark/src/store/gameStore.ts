@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { GameState, GameStore, Slot } from '../core/types';
 import { getBuildingById } from '../data/buildings';
-import { getPerkById } from '../data/perks';
+import { getPerkById, getBonusSlots } from '../data/perks';
 import {
   STARTING_MONEY,
   STARTING_SLOTS,
@@ -186,7 +186,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   unlockNextSlot: () => {
     const state = get();
-    if (state.unlockedSlots >= MAX_SLOTS) return false;
+    const maxSlots = MAX_SLOTS + getBonusSlots(state.unlockedPerks);
+    if (state.unlockedSlots >= maxSlots) return false;
 
     const cost = state.getSlotUnlockCost();
     if (state.money < cost) return false;
