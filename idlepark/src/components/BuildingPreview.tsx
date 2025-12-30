@@ -15,14 +15,38 @@ export function BuildingPreview({ building, slotIndex, onClose, onBuilt }: Props
   const buildInSlot = useGameStore((s) => s.buildInSlot);
 
   const canAfford = money >= building.baseCost;
-  const profit = building.baseIncome - building.maintenanceCost;
-  const isProfitable = profit >= 0;
 
   const handleBuy = () => {
     if (buildInSlot(slotIndex, building.id)) {
       onBuilt();
     }
   };
+
+  const getMainStat = () => {
+    if (building.category === 'ride' && building.attraction) {
+      return { label: 'Attracts', value: `+${building.attraction} guests/s`, color: 'text-park-accent' };
+    }
+    if (building.category === 'shop' && building.spendingRate) {
+      return { label: 'Earns', value: `${formatMoney(building.spendingRate)}/guest/s`, color: 'text-park-success' };
+    }
+    if (building.category === 'infrastructure' && building.coverage) {
+      return { label: 'Covers', value: `${building.coverage} guests`, color: 'text-park-accent' };
+    }
+    return null;
+  };
+
+  const getCategoryDescription = () => {
+    switch (building.category) {
+      case 'ride':
+        return 'Rides bring guests into your park';
+      case 'shop':
+        return 'Shops earn money from your guests';
+      case 'infrastructure':
+        return 'Keeps guests happy so they stay longer';
+    }
+  };
+
+  const mainStat = getMainStat();
 
   return (
     <>
@@ -50,19 +74,18 @@ export function BuildingPreview({ building, slotIndex, onClose, onBuilt }: Props
 
         {/* Stats */}
         <div className="bg-park-bg rounded-xl p-4 mb-4 space-y-3">
+          {mainStat && (
+            <div className="flex justify-between items-center">
+              <span className="text-park-muted">{mainStat.label}</span>
+              <span className={`font-semibold ${mainStat.color}`}>{mainStat.value}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center">
-            <span className="text-park-muted">Earns</span>
-            <span className="text-park-success font-medium">+{formatMoney(building.baseIncome)}/s</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-park-muted">Costs</span>
+            <span className="text-park-muted">Upkeep</span>
             <span className="text-park-danger font-medium">-{formatMoney(building.maintenanceCost)}/s</span>
           </div>
-          <div className="border-t border-park-muted/30 pt-3 flex justify-between items-center">
-            <span className="font-medium">You get</span>
-            <span className={`text-lg font-bold ${isProfitable ? 'text-park-success' : 'text-park-danger'}`}>
-              {isProfitable ? '+' : ''}{formatMoney(profit)}/s
-            </span>
+          <div className="border-t border-park-muted/30 pt-3">
+            <p className="text-xs text-park-muted text-center">{getCategoryDescription()}</p>
           </div>
         </div>
 

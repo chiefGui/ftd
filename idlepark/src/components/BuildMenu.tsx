@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getBuildingsByCategory } from '../data/buildings';
 import { useGameStore } from '../store/gameStore';
 import { formatMoney } from '../utils/formatters';
-import type { AttractionCategory, BuildingDefinition } from '../core/types';
+import type { BuildingCategory, BuildingDefinition } from '../core/types';
 import { BuildingPreview } from './BuildingPreview';
 
-const CATEGORIES: { id: AttractionCategory; label: string; emoji: string }[] = [
+const CATEGORIES: { id: BuildingCategory; label: string; emoji: string }[] = [
   { id: 'ride', label: 'Rides', emoji: '🎢' },
-  { id: 'food', label: 'Food', emoji: '🍕' },
-  { id: 'shop', label: 'Shops', emoji: '🎁' },
+  { id: 'shop', label: 'Shops', emoji: '🛒' },
+  { id: 'infrastructure', label: 'Infra', emoji: '🚻' },
 ];
 
 type Props = {
@@ -18,12 +18,25 @@ type Props = {
 };
 
 export function BuildMenu({ slotIndex, onClose }: Props) {
-  const [activeCategory, setActiveCategory] = useState<AttractionCategory>('ride');
+  const [activeCategory, setActiveCategory] = useState<BuildingCategory>('ride');
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingDefinition | null>(null);
 
   const money = useGameStore((s) => s.money);
 
   const filteredBuildings = getBuildingsByCategory(activeCategory);
+
+  const getStatLabel = (building: BuildingDefinition) => {
+    if (building.category === 'ride' && building.attraction) {
+      return `+${building.attraction} guests/s`;
+    }
+    if (building.category === 'shop' && building.spendingRate) {
+      return `${formatMoney(building.spendingRate)}/guest/s`;
+    }
+    if (building.category === 'infrastructure' && building.coverage) {
+      return `Covers ${building.coverage} guests`;
+    }
+    return '';
+  };
 
   return (
     <>
@@ -67,8 +80,6 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
         <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-8">
           {filteredBuildings.map((building) => {
             const canAfford = money >= building.baseCost;
-            const profit = building.baseIncome - building.maintenanceCost;
-            const isProfitable = profit >= 0;
 
             return (
               <motion.button
@@ -84,13 +95,16 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
                 <span className="text-4xl">{building.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{building.name}</div>
-                  <div className={`text-sm font-medium mt-1 ${isProfitable ? 'text-park-success' : 'text-park-danger'}`}>
-                    {isProfitable ? '+' : ''}{formatMoney(profit)}/s
+                  <div className="text-sm text-park-accent mt-1">
+                    {getStatLabel(building)}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
                   <div className={`font-semibold ${canAfford ? 'text-park-accent' : 'text-park-danger'}`}>
                     {formatMoney(building.baseCost)}
+                  </div>
+                  <div className="text-xs text-park-muted">
+                    -{formatMoney(building.maintenanceCost)}/s
                   </div>
                 </div>
               </motion.button>

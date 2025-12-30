@@ -4,7 +4,7 @@ import type { Slot } from '../core/types';
 import { useGameStore } from '../store/gameStore';
 import { getBuildingById } from '../data/buildings';
 import { formatMoney } from '../utils/formatters';
-import { DEMOLISH_REFUND_RATE } from '../data/constants';
+import { DEMOLISH_REFUND_RATE, STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER } from '../data/constants';
 
 type Props = {
   slot: Slot;
@@ -18,15 +18,35 @@ export function SlotDetail({ slot, onClose }: Props) {
   const upgradeSlot = useGameStore((s) => s.upgradeSlot);
   const demolishSlot = useGameStore((s) => s.demolishSlot);
   const calculateUpgradeCost = useGameStore((s) => s.calculateUpgradeCost);
-  const calculateSlotIncome = useGameStore((s) => s.calculateSlotIncome);
 
   const building = getBuildingById(slot.buildingId);
   if (!building) return null;
 
   const upgradeCost = calculateUpgradeCost(slot.id);
   const canUpgrade = money >= upgradeCost;
-  const income = calculateSlotIncome(slot);
-  const isProfitable = income.net >= 0;
+
+  // Calculate current stats with level
+  const levelMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
+  const maintenanceMultiplier = Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, slot.level - 1);
+  const currentMaintenance = building.maintenanceCost * maintenanceMultiplier;
+
+  const getMainStat = () => {
+    if (building.category === 'ride' && building.attraction) {
+      const value = building.attraction * levelMultiplier;
+      return { label: 'Attracts', value: `+${value.toFixed(1)} guests/s`, color: 'text-park-accent' };
+    }
+    if (building.category === 'shop' && building.spendingRate) {
+      const value = building.spendingRate * levelMultiplier;
+      return { label: 'Earns', value: `${formatMoney(value)}/guest/s`, color: 'text-park-success' };
+    }
+    if (building.category === 'infrastructure' && building.coverage) {
+      const value = Math.floor(building.coverage * levelMultiplier);
+      return { label: 'Covers', value: `${value} guests`, color: 'text-park-accent' };
+    }
+    return null;
+  };
+
+  const mainStat = getMainStat();
 
   // Estimate refund
   const estimatedRefund = Math.floor(building.baseCost * (1 + (slot.level - 1) * 0.5) * DEMOLISH_REFUND_RATE);
@@ -78,22 +98,21 @@ export function SlotDetail({ slot, onClose }: Props) {
               <h2 className="text-xl font-bold">{building.name}</h2>
               <p className="text-sm text-park-muted">Level {slot.level}</p>
             </div>
-            <div className={`text-xl font-bold ${isProfitable ? 'text-park-success' : 'text-park-danger'}`}>
-              {isProfitable ? '+' : ''}{formatMoney(income.net)}/s
-            </div>
           </div>
         </div>
 
         <div className="p-4 space-y-4 pb-8">
-          {/* Simple breakdown */}
+          {/* Stats breakdown */}
           <div className="bg-park-bg rounded-xl p-4 space-y-3">
+            {mainStat && (
+              <div className="flex justify-between items-center">
+                <span className="text-park-muted">{mainStat.label}</span>
+                <span className={`font-semibold ${mainStat.color}`}>{mainStat.value}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
-              <span className="text-park-muted">Earns</span>
-              <span className="text-park-success font-medium">+{formatMoney(income.gross)}/s</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-park-muted">Costs</span>
-              <span className="text-park-danger font-medium">-{formatMoney(income.maintenance)}/s</span>
+              <span className="text-park-muted">Upkeep</span>
+              <span className="text-park-danger font-medium">-{formatMoney(currentMaintenance)}/s</span>
             </div>
           </div>
 

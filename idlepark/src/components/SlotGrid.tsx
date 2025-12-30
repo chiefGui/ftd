@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { getBuildingById } from '../data/buildings';
 import { formatMoney } from '../utils/formatters';
-import { MAX_SLOTS } from '../data/constants';
+import { MAX_SLOTS, STAT_LEVEL_MULTIPLIER } from '../data/constants';
 import { SlotDetail } from './SlotDetail';
 import { BuildMenu } from './BuildMenu';
 
@@ -16,17 +16,14 @@ export function SlotGrid() {
   const money = useGameStore((s) => s.money);
   const unlockNextSlot = useGameStore((s) => s.unlockNextSlot);
   const getSlotUnlockCost = useGameStore((s) => s.getSlotUnlockCost);
-  const calculateSlotIncome = useGameStore((s) => s.calculateSlotIncome);
 
   const unlockCost = getSlotUnlockCost();
   const canUnlock = money >= unlockCost && unlockedSlots < MAX_SLOTS;
 
   const handleSlotClick = (index: number) => {
     if (index < slots.length) {
-      // Filled slot - show detail
       setSelectedSlotIndex(index);
     } else if (index < unlockedSlots) {
-      // Empty slot - open build menu
       setBuildingSlotIndex(index);
     }
   };
@@ -35,6 +32,27 @@ export function SlotGrid() {
     if (canUnlock) {
       unlockNextSlot();
     }
+  };
+
+  const getSlotStatLine = (slot: typeof slots[0]) => {
+    const building = getBuildingById(slot.buildingId);
+    if (!building) return null;
+
+    const levelMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
+
+    if (building.category === 'ride' && building.attraction) {
+      const value = building.attraction * levelMultiplier;
+      return { text: `+${value.toFixed(0)}/s`, color: 'text-park-accent' };
+    }
+    if (building.category === 'shop' && building.spendingRate) {
+      const value = building.spendingRate * levelMultiplier;
+      return { text: `${formatMoney(value)}/g`, color: 'text-park-success' };
+    }
+    if (building.category === 'infrastructure' && building.coverage) {
+      const value = Math.floor(building.coverage * levelMultiplier);
+      return { text: `${value} cap`, color: 'text-park-muted' };
+    }
+    return null;
   };
 
   return (
@@ -48,7 +66,7 @@ export function SlotGrid() {
 
           if (slot) {
             const building = getBuildingById(slot.buildingId);
-            const income = calculateSlotIncome(slot);
+            const statLine = getSlotStatLine(slot);
 
             return (
               <motion.button
@@ -67,9 +85,11 @@ export function SlotGrid() {
                 <span className="text-xs text-park-muted truncate w-full text-center">
                   Lv.{slot.level}
                 </span>
-                <span className={`text-xs font-medium ${income.net >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
-                  {income.net >= 0 ? '+' : ''}{formatMoney(income.net)}/s
-                </span>
+                {statLine && (
+                  <span className={`text-xs font-medium ${statLine.color}`}>
+                    {statLine.text}
+                  </span>
+                )}
               </motion.button>
             );
           }
