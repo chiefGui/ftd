@@ -17,6 +17,8 @@ export type BuildingDefinition = {
   spendingRate?: number;  // $ earned per guest per second
   // Infrastructure stats
   coverage?: number;      // # of guests it can support
+  // Unlock requirement
+  requiredPerk?: string;  // Perk ID required to build
 };
 
 export type Slot = {
@@ -58,6 +60,7 @@ export type GameState = {
   ticketPrice: number;
   slots: Slot[];
   unlockedSlots: number;
+  unlockedPerks: string[];
   lastSaveTime: number;
   totalEarnings: number;
   gameStartedAt: number;
@@ -73,6 +76,9 @@ export type GameStore = GameState & {
 
   unlockNextSlot: () => boolean;
   getSlotUnlockCost: () => number;
+
+  buyPerk: (perkId: string) => boolean;
+  hasPerk: (perkId: string) => boolean;
 
   setTicketPrice: (price: number) => void;
 
