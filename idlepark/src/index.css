@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-pixel: "Press Start 2P", monospace;
+
+  --color-park-bg: #1a1b26;
+  --color-park-card: #24283b;
+  --color-park-accent: #7aa2f7;
+  --color-park-success: #9ece6a;
+  --color-park-warning: #e0af68;
+  --color-park-danger: #f7768e;
+  --color-park-text: #c0caf5;
+  --color-park-muted: #565f89;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--color-park-bg);
+  color: var(--color-park-text);
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
