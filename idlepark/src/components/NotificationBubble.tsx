@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotificationStore } from '../store/notificationStore';
+import { getAvatarUrl } from '../data/guestMessages';
 
 export function NotificationBubble() {
   const latestNotification = useNotificationStore((s) => s.latestNotification);
@@ -27,14 +28,18 @@ export function NotificationBubble() {
           `}>
             {/* Avatar */}
             <div className={`
-              w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0
+              w-10 h-10 rounded-full overflow-hidden shrink-0
               ${latestNotification.type === 'positive'
                 ? 'bg-white/20'
                 : latestNotification.type === 'negative'
                 ? 'bg-white/20'
                 : 'bg-park-muted/20'}
             `}>
-              {latestNotification.avatar}
+              <img
+                src={getAvatarUrl(latestNotification.visitorId)}
+                alt={latestNotification.name}
+                className="w-full h-full"
+              />
             </div>
 
             <div className="flex-1 min-w-0">

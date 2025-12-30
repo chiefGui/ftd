@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { formatMoney } from '../utils/formatters';
+import { getAvatarUrl } from '../data/guestMessages';
 
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -112,14 +113,18 @@ export function SettingsMenu() {
                         >
                           {/* Avatar */}
                           <div className={`
-                            w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0
+                            w-9 h-9 rounded-full overflow-hidden shrink-0
                             ${notif.type === 'positive'
                               ? 'bg-park-success/20'
                               : notif.type === 'negative'
                               ? 'bg-park-danger/20'
                               : 'bg-park-muted/20'}
                           `}>
-                            {notif.avatar}
+                            <img
+                              src={getAvatarUrl(notif.visitorId)}
+                              alt={notif.name}
+                              className="w-full h-full"
+                            />
                           </div>
 
                           {/* Content */}

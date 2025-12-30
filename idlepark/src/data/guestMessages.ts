@@ -1,47 +1,35 @@
-// Guest profiles with names and avatar emojis
+// Guest names for procedural avatar generation
+export const GUEST_NAMES = [
+  'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'Lucas', 'Sophia', 'Mason',
+  'Isabella', 'Ethan', 'Mia', 'Aiden', 'Charlotte', 'Jackson', 'Luna', 'Sebastian',
+  'Harper', 'James', 'Evelyn', 'Benjamin', 'Aria', 'Elijah', 'Chloe', 'Logan',
+  'Scarlett', 'Alexander', 'Grace', 'William', 'Zoey', 'Michael', 'Lily', 'Daniel',
+  'Sophie', 'Ryan', 'Zara', 'Tyler', 'Maya', 'Owen', 'Layla', 'Nathan',
+];
+
 export type GuestProfile = {
   name: string;
-  avatar: string;
+  visitorId: string; // Unique ID for avatar generation
 };
 
-export const GUEST_PROFILES: GuestProfile[] = [
-  { name: 'Emma', avatar: '👩' },
-  { name: 'Liam', avatar: '👨' },
-  { name: 'Olivia', avatar: '👩‍🦰' },
-  { name: 'Noah', avatar: '🧑' },
-  { name: 'Ava', avatar: '👧' },
-  { name: 'Lucas', avatar: '👦' },
-  { name: 'Sophia', avatar: '👩‍🦱' },
-  { name: 'Mason', avatar: '🧔' },
-  { name: 'Isabella', avatar: '👩‍🦳' },
-  { name: 'Ethan', avatar: '🧑‍🦱' },
-  { name: 'Mia', avatar: '👱‍♀️' },
-  { name: 'Aiden', avatar: '👱' },
-  { name: 'Charlotte', avatar: '🧑‍🦰' },
-  { name: 'Jackson', avatar: '👴' },
-  { name: 'Luna', avatar: '👶' },
-  { name: 'Sebastian', avatar: '🧑‍🦲' },
-  { name: 'Harper', avatar: '👩‍🦲' },
-  { name: 'James', avatar: '🤵' },
-  { name: 'Evelyn', avatar: '👸' },
-  { name: 'Benjamin', avatar: '🤴' },
-  { name: 'Aria', avatar: '🧕' },
-  { name: 'Elijah', avatar: '👳' },
-  { name: 'Chloe', avatar: '💃' },
-  { name: 'Logan', avatar: '🕺' },
-  { name: 'Scarlett', avatar: '🧑‍🎤' },
-  { name: 'Alexander', avatar: '👨‍🎤' },
-  { name: 'Grace', avatar: '🧚' },
-  { name: 'William', avatar: '🦸' },
-  { name: 'Zoey', avatar: '🦹‍♀️' },
-  { name: 'Michael', avatar: '🥷' },
-  { name: 'Lily', avatar: '🧝‍♀️' },
-  { name: 'Daniel', avatar: '🧙' },
-  { name: 'Sophie', avatar: '👰' },
-  { name: 'Ryan', avatar: '🤠' },
-  { name: 'Zara', avatar: '🧑‍🚀' },
-  { name: 'Tyler', avatar: '👨‍🍳' },
-];
+// Generate a unique visitor ID for avatar diversity
+let visitorCounter = 0;
+export function randomGuestProfile(): GuestProfile {
+  const name = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
+  const visitorId = `${name}-${Date.now()}-${visitorCounter++}`;
+  return { name, visitorId };
+}
+
+// Get avatar URL from DiceBear API
+export function getAvatarUrl(visitorId: string): string {
+  // Using "adventurer" style for friendly cartoon avatars
+  return `https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${encodeURIComponent(visitorId)}&size=40&backgroundColor=transparent`;
+}
+
+// Legacy support
+export function randomGuestName(): string {
+  return randomGuestProfile().name;
+}
 
 export type MessageTemplate = {
   emoji: string;
@@ -255,13 +243,4 @@ export const EMPTY_PARK_MESSAGES: MessageTemplate[] = [
 
 export function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
-}
-
-export function randomGuestProfile(): GuestProfile {
-  return pickRandom(GUEST_PROFILES);
-}
-
-// Legacy support
-export function randomGuestName(): string {
-  return randomGuestProfile().name;
 }

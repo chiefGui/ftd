@@ -18,7 +18,7 @@ import {
 export type Notification = {
   id: number;
   name: string;
-  avatar: string;
+  visitorId: string; // Used for procedural avatar generation
   emoji: string;
   text: string;
   type: 'positive' | 'negative' | 'neutral';
@@ -123,7 +123,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     const template = pickRandom(pool);
     get().addNotification({
       name: profile.name,
-      avatar: profile.avatar,
+      visitorId: profile.visitorId,
       emoji: template.emoji,
       text: template.text,
       type,
@@ -135,7 +135,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     const template = pickRandom(AMBIENT_MESSAGES);
     get().addNotification({
       name: profile.name,
-      avatar: profile.avatar,
+      visitorId: profile.visitorId,
       emoji: template.emoji,
       text: template.text,
       type: 'neutral',
@@ -147,7 +147,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     const template = pickRandom(NEW_BUILDING_MESSAGES);
     get().addNotification({
       name: profile.name,
-      avatar: profile.avatar,
+      visitorId: profile.visitorId,
       emoji: template.emoji,
       text: template.text,
       type: 'positive',
@@ -159,7 +159,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     const template = pickRandom(UPGRADE_MESSAGES);
     get().addNotification({
       name: profile.name,
-      avatar: profile.avatar,
+      visitorId: profile.visitorId,
       emoji: template.emoji,
       text: template.text,
       type: 'positive',
