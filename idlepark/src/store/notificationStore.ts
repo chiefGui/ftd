@@ -7,14 +7,18 @@ import {
   AMBIENT_MESSAGES,
   HIGH_PRICE_MESSAGES,
   LOW_PRICE_MESSAGES,
+  UPGRADE_MESSAGES,
+  CROWDED_MESSAGES,
+  EMPTY_PARK_MESSAGES,
   pickRandom,
-  randomGuestName,
+  randomGuestProfile,
   type MessageTemplate,
 } from '../data/guestMessages';
 
 export type Notification = {
   id: number;
   name: string;
+  avatar: string;
   emoji: string;
   text: string;
   type: 'positive' | 'negative' | 'neutral';
@@ -31,9 +35,11 @@ type NotificationStore = {
     satisfaction: number;
     priceRatio: number;
     guests: number;
+    maxGuests: number;
   }) => void;
   generateAmbientMessage: () => void;
   generateNewBuildingMessage: () => void;
+  generateUpgradeMessage: () => void;
   markAsRead: () => void;
   clearLatest: () => void;
 };
@@ -53,7 +59,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     };
 
     set((state) => ({
-      notifications: [newNotification, ...state.notifications].slice(0, 50), // Keep last 50
+      notifications: [newNotification, ...state.notifications].slice(0, 50),
       latestNotification: newNotification,
       hasUnread: true,
     }));
@@ -67,19 +73,30 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }, 4000);
   },
 
-  generateContextualMessage: ({ satisfaction, priceRatio, guests }) => {
+  generateContextualMessage: ({ satisfaction, priceRatio, guests, maxGuests }) => {
     if (guests < 1) return;
 
     const rand = Math.random();
+    const profile = randomGuestProfile();
     let pool: MessageTemplate[];
     let type: Notification['type'];
 
-    // Price-specific messages occasionally
-    if (rand < 0.15 && priceRatio > 1.5) {
+    const crowdRatio = maxGuests > 0 ? guests / maxGuests : 0;
+
+    // Special situation messages (15% chance each when applicable)
+    if (rand < 0.12 && priceRatio > 1.5) {
       pool = HIGH_PRICE_MESSAGES;
       type = 'negative';
-    } else if (rand < 0.15 && priceRatio < 0.8) {
+    } else if (rand < 0.12 && priceRatio < 0.8) {
       pool = LOW_PRICE_MESSAGES;
+      type = 'positive';
+    } else if (rand < 0.15 && crowdRatio > 0.8) {
+      // Park is very crowded
+      pool = CROWDED_MESSAGES;
+      type = satisfaction > 0.5 ? 'neutral' : 'negative';
+    } else if (rand < 0.15 && crowdRatio < 0.2 && guests > 0) {
+      // Park is very empty
+      pool = EMPTY_PARK_MESSAGES;
       type = 'positive';
     }
     // Satisfaction-based messages
@@ -105,7 +122,8 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     const template = pickRandom(pool);
     get().addNotification({
-      name: randomGuestName(),
+      name: profile.name,
+      avatar: profile.avatar,
       emoji: template.emoji,
       text: template.text,
       type,
@@ -113,9 +131,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   generateAmbientMessage: () => {
+    const profile = randomGuestProfile();
     const template = pickRandom(AMBIENT_MESSAGES);
     get().addNotification({
-      name: randomGuestName(),
+      name: profile.name,
+      avatar: profile.avatar,
       emoji: template.emoji,
       text: template.text,
       type: 'neutral',
@@ -123,9 +143,23 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   generateNewBuildingMessage: () => {
+    const profile = randomGuestProfile();
     const template = pickRandom(NEW_BUILDING_MESSAGES);
     get().addNotification({
-      name: randomGuestName(),
+      name: profile.name,
+      avatar: profile.avatar,
+      emoji: template.emoji,
+      text: template.text,
+      type: 'positive',
+    });
+  },
+
+  generateUpgradeMessage: () => {
+    const profile = randomGuestProfile();
+    const template = pickRandom(UPGRADE_MESSAGES);
+    get().addNotification({
+      name: profile.name,
+      avatar: profile.avatar,
       emoji: template.emoji,
       text: template.text,
       type: 'positive',

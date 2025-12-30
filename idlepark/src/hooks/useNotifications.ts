@@ -4,6 +4,7 @@ import { useNotificationStore } from '../store/notificationStore';
 
 export function useNotifications() {
   const lastBuildingCountRef = useRef(0);
+  const lastTotalLevelRef = useRef(0);
 
   const guests = useGameStore((s) => s.guests);
   const ticketPrice = useGameStore((s) => s.ticketPrice);
@@ -13,9 +14,11 @@ export function useNotifications() {
   const generateContextualMessage = useNotificationStore((s) => s.generateContextualMessage);
   const generateAmbientMessage = useNotificationStore((s) => s.generateAmbientMessage);
   const generateNewBuildingMessage = useNotificationStore((s) => s.generateNewBuildingMessage);
+  const generateUpgradeMessage = useNotificationStore((s) => s.generateUpgradeMessage);
 
   const stats = calculateParkStats();
   const buildingCount = slots.filter((s) => s.buildingId).length;
+  const totalLevels = slots.reduce((acc, s) => acc + s.level, 0);
 
   // Generate contextual messages based on park state
   useEffect(() => {
@@ -26,11 +29,12 @@ export function useNotifications() {
         satisfaction: stats.overallSatisfaction,
         priceRatio: ticketPrice / 50,
         guests,
+        maxGuests: stats.maxGuests,
       });
     }, 4000 + Math.random() * 3000); // 4-7 seconds
 
     return () => clearInterval(interval);
-  }, [guests, stats.overallSatisfaction, ticketPrice, generateContextualMessage]);
+  }, [guests, stats.overallSatisfaction, stats.maxGuests, ticketPrice, generateContextualMessage]);
 
   // Generate ambient messages when there are no guests
   useEffect(() => {
@@ -51,4 +55,15 @@ export function useNotifications() {
     }
     lastBuildingCountRef.current = buildingCount;
   }, [buildingCount, generateNewBuildingMessage]);
+
+  // Detect upgrades
+  useEffect(() => {
+    if (totalLevels > lastTotalLevelRef.current && lastTotalLevelRef.current > 0) {
+      // Small chance to comment on upgrades
+      if (Math.random() < 0.4) {
+        generateUpgradeMessage();
+      }
+    }
+    lastTotalLevelRef.current = totalLevels;
+  }, [totalLevels, generateUpgradeMessage]);
 }
