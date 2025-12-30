@@ -6,6 +6,10 @@ export function formatMoney(amount: number): string {
   if (amount >= 1000) {
     return `$${(amount / 1000).toFixed(1)}K`;
   }
+  if (amount < 1 && amount > 0) {
+    // Show cents for small values like shop earnings
+    return `$${amount.toFixed(2)}`;
+  }
   return `$${Math.floor(amount).toLocaleString()}`;
 }
 
