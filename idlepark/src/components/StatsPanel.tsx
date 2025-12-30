@@ -1,24 +1,70 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
+import { getBuildingById } from '../data/buildings';
 import { formatMoney } from '../utils/formatters';
 
 type Props = {
   onClose: () => void;
 };
 
+function ProgressBar({ value, color }: { value: number; color: string }) {
+  const percent = Math.min(100, Math.round(value * 100));
+  return (
+    <div className="h-2 bg-park-muted/30 rounded-full overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${percent}%` }}
+        className={`h-full rounded-full ${color}`}
+      />
+    </div>
+  );
+}
+
+function StatusBadge({ good, text }: { good: boolean; text: string }) {
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full ${
+      good ? 'bg-park-success/20 text-park-success' : 'bg-park-danger/20 text-park-danger'
+    }`}>
+      {text}
+    </span>
+  );
+}
+
 export function StatsPanel({ onClose }: Props) {
   const calculateParkStats = useGameStore((s) => s.calculateParkStats);
   const ticketPrice = useGameStore((s) => s.ticketPrice);
+  const slots = useGameStore((s) => s.slots);
 
   const stats = calculateParkStats();
 
-  const getSatisfactionEmoji = (value: number) => {
-    if (value >= 0.8) return '😊';
-    if (value >= 0.5) return '😐';
-    return '😟';
+  // Determine what the player should do next
+  const getAdvice = () => {
+    if (stats.reputation === 0) {
+      return { emoji: '🎢', text: 'Build a ride to attract guests!' };
+    }
+    if (stats.rideSatisfaction < 0.5 && stats.currentGuests > 5) {
+      return { emoji: '🎢', text: 'Rides are overcrowded. Build more rides!' };
+    }
+    if (stats.facilitySatisfaction < 0.5 && stats.currentGuests > 5) {
+      return { emoji: '🚻', text: 'Guests need facilities. Add restrooms or benches!' };
+    }
+    if (stats.shopIncome === 0 && stats.currentGuests > 10) {
+      return { emoji: '🛒', text: 'Build shops to earn money from guests!' };
+    }
+    if (stats.overallSatisfaction >= 0.8 && stats.currentGuests >= stats.maxGuests * 0.8) {
+      return { emoji: '🔓', text: 'Park is almost full! Unlock more slots.' };
+    }
+    if (stats.netIncome < 0) {
+      return { emoji: '⚠️', text: 'Losing money! Lower ticket price or build more.' };
+    }
+    return { emoji: '✨', text: 'Park is running great!' };
   };
 
-  const formatPercent = (value: number) => `${Math.round(value * 100)}%`;
+  const advice = getAdvice();
+  const hasRides = slots.some(s => {
+    const b = getBuildingById(s.buildingId);
+    return b?.category === 'ride';
+  });
 
   return (
     <>
@@ -34,152 +80,133 @@ export function StatsPanel({ onClose }: Props) {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 bg-park-card rounded-t-3xl z-50 max-h-[80vh] overflow-auto"
+        className="fixed bottom-0 left-0 right-0 bg-park-card rounded-t-3xl z-50 max-h-[85vh] overflow-auto"
       >
         <div className="p-4">
           <div className="w-12 h-1 bg-park-muted/50 rounded-full mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-center mb-6">Park Stats</h2>
 
-          {/* Guests Section */}
-          <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>👥</span> Guests
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-park-muted">Current</span>
-                <span className="font-medium">{Math.floor(stats.currentGuests)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-park-muted">Target (from reputation)</span>
-                <span className="font-medium">{Math.floor(stats.targetGuests)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-park-muted">Max capacity (slots)</span>
-                <span className="font-medium">{stats.maxGuests}</span>
-              </div>
+          {/* Advice Banner */}
+          <div className="bg-park-accent/10 border border-park-accent/30 rounded-xl p-4 mb-5">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{advice.emoji}</span>
+              <p className="font-medium text-park-text">{advice.text}</p>
             </div>
-            {stats.reputation === 0 && (
-              <p className="text-xs text-park-danger mt-3">
-                No rides! Build rides to attract guests.
+          </div>
+
+          {/* Guest Count - Simple */}
+          <div className="bg-park-bg rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-lg font-semibold">👥 Guests</span>
+              <span className="text-2xl font-bold">{Math.floor(stats.currentGuests)}</span>
+            </div>
+            <ProgressBar
+              value={stats.maxGuests > 0 ? stats.currentGuests / stats.maxGuests : 0}
+              color="bg-park-accent"
+            />
+            <div className="flex justify-between text-xs text-park-muted mt-2">
+              <span>0</span>
+              <span>Max: {stats.maxGuests}</span>
+            </div>
+            {!hasRides && (
+              <p className="text-sm text-park-danger mt-3">
+                No rides = no guests coming
               </p>
             )}
           </div>
 
-          {/* Reputation Section */}
+          {/* Happiness - Two bars */}
           <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>⭐</span> Park Reputation
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-park-muted">Total prestige</span>
-                <span className="font-medium">{Math.floor(stats.reputation)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-park-muted">Ticket price</span>
-                <span className="font-medium">{formatMoney(ticketPrice)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-park-muted">Demand at this price</span>
-                <span className={`font-medium ${stats.demandMultiplier >= 0.7 ? 'text-park-success' : stats.demandMultiplier >= 0.4 ? 'text-yellow-500' : 'text-park-danger'}`}>
-                  {formatPercent(stats.demandMultiplier)}
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-lg font-semibold">
+                {stats.overallSatisfaction >= 0.8 ? '😊' : stats.overallSatisfaction >= 0.5 ? '😐' : '😟'} Happiness
+              </span>
+              <StatusBadge
+                good={stats.overallSatisfaction >= 0.8}
+                text={stats.overallSatisfaction >= 0.8 ? 'Happy' : stats.overallSatisfaction >= 0.5 ? 'Okay' : 'Unhappy'}
+              />
+            </div>
+
+            {/* Rides */}
+            <div className="mb-4">
+              <div className="flex justify-between text-sm mb-1">
+                <span>🎢 Ride queues</span>
+                <span className={stats.rideSatisfaction >= 0.8 ? 'text-park-success' : stats.rideSatisfaction >= 0.5 ? 'text-yellow-500' : 'text-park-danger'}>
+                  {stats.rideSatisfaction >= 1 ? 'Short' : stats.rideSatisfaction >= 0.5 ? 'Medium' : 'Long!'}
                 </span>
               </div>
+              <ProgressBar
+                value={stats.rideSatisfaction}
+                color={stats.rideSatisfaction >= 0.8 ? 'bg-park-success' : stats.rideSatisfaction >= 0.5 ? 'bg-yellow-500' : 'bg-park-danger'}
+              />
+              {stats.rideSatisfaction < 0.8 && stats.currentGuests > 0 && (
+                <p className="text-xs text-park-muted mt-1">
+                  Need more ride capacity for {Math.floor(stats.currentGuests)} guests
+                </p>
+              )}
             </div>
-            <p className="text-xs text-park-muted mt-3">
-              Higher ticket price = more money per guest but fewer want to come
-            </p>
-          </div>
 
-          {/* Satisfaction Section */}
-          <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>{getSatisfactionEmoji(stats.overallSatisfaction)}</span> Satisfaction
-            </h3>
-            <div className="space-y-3 text-sm">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-park-muted">Ride queues</span>
-                  <span className={`font-medium ${stats.rideSatisfaction >= 0.8 ? 'text-park-success' : stats.rideSatisfaction >= 0.5 ? 'text-yellow-500' : 'text-park-danger'}`}>
-                    {formatPercent(stats.rideSatisfaction)}
-                  </span>
-                </div>
-                <div className="text-xs text-park-muted">
-                  Capacity: {Math.floor(stats.rideCapacity)} / Guests: {Math.floor(stats.currentGuests)}
-                </div>
-                {stats.rideSatisfaction < 1 && stats.currentGuests > 0 && (
-                  <p className="text-xs text-park-danger mt-1">
-                    Rides are overcrowded! Build more rides.
-                  </p>
-                )}
+            {/* Facilities */}
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>🚻 Facilities</span>
+                <span className={stats.facilitySatisfaction >= 0.8 ? 'text-park-success' : stats.facilitySatisfaction >= 0.5 ? 'text-yellow-500' : 'text-park-danger'}>
+                  {stats.facilitySatisfaction >= 1 ? 'Plenty' : stats.facilitySatisfaction >= 0.5 ? 'Some' : 'Not enough!'}
+                </span>
               </div>
-
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-park-muted">Facilities</span>
-                  <span className={`font-medium ${stats.facilitySatisfaction >= 0.8 ? 'text-park-success' : stats.facilitySatisfaction >= 0.5 ? 'text-yellow-500' : 'text-park-danger'}`}>
-                    {formatPercent(stats.facilitySatisfaction)}
-                  </span>
-                </div>
-                <div className="text-xs text-park-muted">
-                  Coverage: {Math.floor(stats.infrastructureCoverage)} / Guests: {Math.floor(stats.currentGuests)}
-                </div>
-                {stats.facilitySatisfaction < 1 && stats.currentGuests > 0 && (
-                  <p className="text-xs text-park-danger mt-1">
-                    Not enough facilities! Build restrooms, benches, etc.
-                  </p>
-                )}
-              </div>
-
-              <div className="border-t border-park-muted/30 pt-3">
-                <div className="flex justify-between">
-                  <span className="font-medium">Overall</span>
-                  <span className={`font-bold ${stats.overallSatisfaction >= 0.8 ? 'text-park-success' : stats.overallSatisfaction >= 0.5 ? 'text-yellow-500' : 'text-park-danger'}`}>
-                    {formatPercent(stats.overallSatisfaction)}
-                  </span>
-                </div>
-              </div>
+              <ProgressBar
+                value={stats.facilitySatisfaction}
+                color={stats.facilitySatisfaction >= 0.8 ? 'bg-park-success' : stats.facilitySatisfaction >= 0.5 ? 'bg-yellow-500' : 'bg-park-danger'}
+              />
+              {stats.facilitySatisfaction < 0.8 && stats.currentGuests > 0 && (
+                <p className="text-xs text-park-muted mt-1">
+                  Guests need restrooms, benches, trash cans
+                </p>
+              )}
             </div>
-            {stats.overallSatisfaction < 1 && (
-              <p className="text-xs text-park-muted mt-3">
-                Low satisfaction = guests leave faster = less income
+
+            {stats.overallSatisfaction < 0.8 && (
+              <p className="text-sm text-park-danger mt-4 text-center">
+                Unhappy guests leave faster!
               </p>
             )}
           </div>
 
-          {/* Income Section */}
+          {/* Money - Simple */}
           <div className="bg-park-bg rounded-xl p-4 mb-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>💰</span> Income
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-lg font-semibold">💰 Money</span>
+              <span className={`text-xl font-bold ${stats.netIncome >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
+                {stats.netIncome >= 0 ? '+' : ''}{formatMoney(stats.netIncome)}/s
+              </span>
+            </div>
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-park-muted">From tickets</span>
-                <span className="text-park-success font-medium">+{formatMoney(stats.ticketIncome)}/s</span>
+                <span className="text-park-muted">🎟️ Tickets ({formatMoney(ticketPrice)} each)</span>
+                <span className="text-park-success">+{formatMoney(stats.ticketIncome)}/s</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-park-muted">From shops</span>
-                <span className="text-park-success font-medium">+{formatMoney(stats.shopIncome)}/s</span>
+                <span className="text-park-muted">🛒 Shop sales</span>
+                <span className="text-park-success">+{formatMoney(stats.shopIncome)}/s</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-park-muted">Maintenance</span>
-                <span className="text-park-danger font-medium">-{formatMoney(stats.totalMaintenance)}/s</span>
-              </div>
-              <div className="border-t border-park-muted/30 pt-2 flex justify-between">
-                <span className="font-medium">Net income</span>
-                <span className={`font-bold ${stats.netIncome >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
-                  {stats.netIncome >= 0 ? '+' : ''}{formatMoney(stats.netIncome)}/s
-                </span>
+                <span className="text-park-muted">🔧 Running costs</span>
+                <span className="text-park-danger">-{formatMoney(stats.totalMaintenance)}/s</span>
               </div>
             </div>
+
+            {stats.shopIncome === 0 && stats.currentGuests > 0 && (
+              <p className="text-xs text-park-muted mt-3 text-center">
+                Build shops to earn from your guests!
+              </p>
+            )}
           </div>
 
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl font-medium bg-park-bg text-park-muted mb-4"
+            className="w-full py-3 rounded-xl font-medium bg-park-accent text-white"
           >
-            Close
+            Got it
           </button>
         </div>
       </motion.div>

@@ -22,36 +22,32 @@ export function BuildingPreview({ building, slotIndex, onClose, onBuilt }: Props
     }
   };
 
-  const getStats = () => {
+  const getContent = () => {
     if (building.category === 'ride') {
-      return [
-        { label: 'Prestige', value: `⭐ ${building.prestige}`, desc: 'Attracts guests to your park' },
-        { label: 'Capacity', value: `${building.rideCapacity} guests`, desc: 'How many can ride (affects queues)' },
-      ];
+      return {
+        mainStat: `Attracts up to ${building.prestige} guests`,
+        secondaryStat: `Can handle ${building.rideCapacity} guests at once`,
+        hint: 'More rides = more guests want to visit',
+      };
     }
     if (building.category === 'shop') {
-      return [
-        { label: 'Earns', value: `${formatMoney(building.spendingRate ?? 0)}/guest/s`, desc: 'Income per guest in park' },
-      ];
+      return {
+        mainStat: `Earns ${formatMoney(building.spendingRate ?? 0)} per guest`,
+        secondaryStat: 'Every second, per guest in park',
+        hint: 'More guests = more money from shops',
+      };
     }
     if (building.category === 'infrastructure') {
-      return [
-        { label: 'Coverage', value: `${building.coverage} guests`, desc: 'Keeps this many guests happy' },
-      ];
+      return {
+        mainStat: `Keeps ${building.coverage} guests happy`,
+        secondaryStat: 'Without facilities, guests get upset',
+        hint: 'Happy guests stay longer!',
+      };
     }
-    return [];
+    return { mainStat: '', secondaryStat: '', hint: '' };
   };
 
-  const getCategoryDescription = () => {
-    switch (building.category) {
-      case 'ride':
-        return 'Rides attract guests and keep them entertained';
-      case 'shop':
-        return 'Shops earn money from guests in your park';
-      case 'infrastructure':
-        return 'Facilities keep guests satisfied';
-    }
-  };
+  const content = getContent();
 
   return (
     <>
@@ -77,27 +73,18 @@ export function BuildingPreview({ building, slotIndex, onClose, onBuilt }: Props
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="bg-park-bg rounded-xl p-4 mb-4 space-y-3">
-          {getStats().map((stat, i) => (
-            <div key={i}>
-              <div className="flex justify-between items-center">
-                <span className="text-park-muted">{stat.label}</span>
-                <span className="font-semibold text-park-accent">{stat.value}</span>
-              </div>
-              <p className="text-xs text-park-muted mt-1">{stat.desc}</p>
-            </div>
-          ))}
-          <div className="border-t border-park-muted/30 pt-3">
-            <div className="flex justify-between items-center">
-              <span className="text-park-muted">Upkeep</span>
-              <span className="text-park-danger font-medium">-{formatMoney(building.maintenanceCost)}/s</span>
-            </div>
+        {/* What it does */}
+        <div className="bg-park-bg rounded-xl p-4 mb-4">
+          <p className="text-lg font-semibold text-park-accent mb-1">{content.mainStat}</p>
+          <p className="text-sm text-park-muted mb-3">{content.secondaryStat}</p>
+          <div className="border-t border-park-muted/30 pt-3 flex justify-between items-center">
+            <span className="text-park-muted">Running cost</span>
+            <span className="text-park-danger font-medium">-{formatMoney(building.maintenanceCost)}/s</span>
           </div>
         </div>
 
-        {/* Category hint */}
-        <p className="text-xs text-park-muted text-center mb-4">{getCategoryDescription()}</p>
+        {/* Hint */}
+        <p className="text-xs text-park-muted text-center mb-4 italic">{content.hint}</p>
 
         {/* Price */}
         <div className="text-center mb-4">
