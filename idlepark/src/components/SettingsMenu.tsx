@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { formatMoney } from '../utils/formatters';
+import { getAvatarUrl } from '../data/guestMessages';
+import { StatsDashboard } from './StatsDashboard';
 
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const totalEarnings = useGameStore((s) => s.totalEarnings);
   const gameStartedAt = useGameStore((s) => s.gameStartedAt);
   const resetGame = useGameStore((s) => s.resetGame);
@@ -90,52 +93,86 @@ export function SettingsMenu() {
 
               {/* Scrollable content */}
               <div className="flex-1 overflow-y-auto">
+                {/* Stats Dashboard Button */}
+                <div className="p-4 border-b border-park-muted/30">
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowStats(true);
+                    }}
+                    className="w-full flex items-center gap-3 bg-gradient-to-r from-park-accent/20 to-park-success/20 hover:from-park-accent/30 hover:to-park-success/30 border border-park-accent/30 rounded-xl p-4 transition-colors"
+                  >
+                    <span className="text-2xl">📊</span>
+                    <div className="text-left">
+                      <div className="font-semibold">Park Analytics</div>
+                      <div className="text-xs text-park-muted">View detailed stats & insights</div>
+                    </div>
+                    <span className="ml-auto text-park-muted">→</span>
+                  </motion.button>
+                </div>
+
                 {/* Guest Feed */}
                 <div className="p-4 border-b border-park-muted/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">🎈</span>
-                    <span className="text-xs text-park-muted uppercase tracking-wide">Guest Feed</span>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-lg">💬</span>
+                    <span className="text-xs text-park-muted uppercase tracking-wide font-medium">Guest Feed</span>
                   </div>
 
                   {notifications.length === 0 ? (
-                    <p className="text-sm text-park-muted italic">No messages yet...</p>
+                    <div className="text-center py-6">
+                      <span className="text-3xl mb-2 block">🎈</span>
+                      <p className="text-sm text-park-muted">No messages yet...</p>
+                      <p className="text-xs text-park-muted mt-1">Build rides to attract guests!</p>
+                    </div>
                   ) : (
-                    <div className="space-y-2">
-                      {notifications.slice(0, 10).map((notif) => (
+                    <div className="space-y-3">
+                      {notifications.slice(0, 12).map((notif) => (
                         <div
                           key={notif.id}
-                          className={`text-sm p-2 rounded-lg ${
-                            notif.type === 'positive'
-                              ? 'bg-park-success/10'
-                              : notif.type === 'negative'
-                              ? 'bg-park-danger/10'
-                              : 'bg-park-muted/10'
-                          }`}
+                          className="flex gap-3"
                         >
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className={`font-medium text-xs ${
-                              notif.type === 'positive'
-                                ? 'text-park-success'
-                                : notif.type === 'negative'
-                                ? 'text-park-danger'
-                                : 'text-park-muted'
-                            }`}>
-                              {notif.name}
-                            </span>
-                            <span className="text-xs text-park-muted">
-                              {formatTimeAgo(notif.timestamp)}
-                            </span>
-                          </div>
-                          <p className={`${
-                            notif.type === 'positive'
-                              ? 'text-park-success'
+                          {/* Avatar */}
+                          <div className={`
+                            w-9 h-9 rounded-full overflow-hidden shrink-0
+                            ${notif.type === 'positive'
+                              ? 'bg-park-success/20'
                               : notif.type === 'negative'
-                              ? 'text-park-danger'
-                              : 'text-park-text'
-                          }`}>
-                            <span className="mr-1">{notif.emoji}</span>
-                            {notif.text}
-                          </p>
+                              ? 'bg-park-danger/20'
+                              : 'bg-park-muted/20'}
+                          `}>
+                            <img
+                              src={getAvatarUrl(notif.visitorId)}
+                              alt={notif.name}
+                              className="w-full h-full"
+                            />
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-semibold text-sm ${
+                                notif.type === 'positive'
+                                  ? 'text-park-success'
+                                  : notif.type === 'negative'
+                                  ? 'text-park-danger'
+                                  : 'text-park-text'
+                              }`}>
+                                {notif.name}
+                              </span>
+                              <span className="text-xs text-park-muted">
+                                @{notif.name.toLowerCase()}
+                              </span>
+                              <span className="text-xs text-park-muted">·</span>
+                              <span className="text-xs text-park-muted">
+                                {formatTimeAgo(notif.timestamp)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-park-text mt-0.5 leading-relaxed">
+                              <span className="mr-1">{notif.emoji}</span>
+                              {notif.text}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -187,6 +224,13 @@ export function SettingsMenu() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Stats Dashboard Modal */}
+      <AnimatePresence>
+        {showStats && (
+          <StatsDashboard onClose={() => setShowStats(false)} />
         )}
       </AnimatePresence>
     </>

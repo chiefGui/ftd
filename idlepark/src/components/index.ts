@@ -6,7 +6,7 @@ export { SlotDetail } from './SlotDetail';
 export { BuildMenu } from './BuildMenu';
 export { BuildingPreview } from './BuildingPreview';
 export { StatsPanel } from './StatsPanel';
-export { TicketControl } from './TicketControl';
+export { TicketPriceModal } from './TicketPriceModal';
 export { SettingsMenu } from './SettingsMenu';
 export { GameOverModal } from './GameOverModal';
 export { OfflineModal } from './OfflineModal';

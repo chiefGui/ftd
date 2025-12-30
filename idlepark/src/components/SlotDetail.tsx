@@ -6,6 +6,7 @@ import { useNotificationStore } from '../store/notificationStore';
 import { getBuildingById } from '../data/buildings';
 import { formatMoney } from '../utils/formatters';
 import { DEMOLISH_REFUND_RATE, STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER, MAX_BUILDING_LEVEL } from '../data/constants';
+import { randomGuestProfile } from '../data/guestMessages';
 
 type Props = {
   slot: Slot;
@@ -95,8 +96,10 @@ export function SlotDetail({ slot, onClose }: Props) {
         `${building.name} looking even better now`,
         `love that they're investing in the ${building.name}`,
       ];
+      const guest = randomGuestProfile();
       addNotification({
-        name: ['Emma', 'Liam', 'Olivia', 'Noah'][Math.floor(Math.random() * 4)],
+        name: guest.name,
+        visitorId: guest.visitorId,
         emoji: '⬆️',
         text: messages[Math.floor(Math.random() * messages.length)],
         type: 'positive',

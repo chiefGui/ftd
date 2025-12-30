@@ -3,11 +3,13 @@ import { AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { formatMoney, formatNumber } from '../utils/formatters';
 import { SettingsMenu } from './SettingsMenu';
-import { TicketControl } from './TicketControl';
+import { TicketPriceModal } from './TicketPriceModal';
 import { StatsPanel } from './StatsPanel';
 
 export function Header() {
   const [showStats, setShowStats] = useState(false);
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const ticketPrice = useGameStore((s) => s.ticketPrice);
 
   const money = useGameStore((s) => s.money);
   const guests = useGameStore((s) => s.guests);
@@ -58,8 +60,15 @@ export function Header() {
               }`}>{satisfactionPercent}%</span>
             </span>
           </div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <TicketControl />
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTicketModal(true);
+            }}
+            className="flex items-center gap-1.5 bg-park-bg rounded-lg px-3 py-1.5 active:bg-park-muted/30"
+          >
+            <span className="text-lg">🎟️</span>
+            <span className="font-semibold">{formatMoney(ticketPrice)}</span>
           </div>
         </button>
       </header>
@@ -67,6 +76,11 @@ export function Header() {
       {/* Stats Panel */}
       <AnimatePresence>
         {showStats && <StatsPanel onClose={() => setShowStats(false)} />}
+      </AnimatePresence>
+
+      {/* Ticket Price Modal */}
+      <AnimatePresence>
+        {showTicketModal && <TicketPriceModal onClose={() => setShowTicketModal(false)} />}
       </AnimatePresence>
     </>
   );
