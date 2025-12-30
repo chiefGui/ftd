@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { getBuildingById } from '../data/buildings';
-import { formatMoney, formatMoneyPerSec } from '../utils/formatters';
+import { formatMoney } from '../utils/formatters';
 import { MAX_SLOTS } from '../data/constants';
 import { SlotDetail } from './SlotDetail';
 import { BuildMenu } from './BuildMenu';
@@ -68,7 +68,7 @@ export function SlotGrid() {
                   Lv.{slot.level}
                 </span>
                 <span className={`text-xs font-medium ${income.net >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
-                  {formatMoneyPerSec(income.net)}
+                  {income.net >= 0 ? '+' : ''}{formatMoney(income.net)}/s
                 </span>
               </motion.button>
             );

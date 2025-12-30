@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { getBuildingsByCategory } from '../data/buildings';
 import { useGameStore } from '../store/gameStore';
-import { formatMoney, formatMoneyPerSec } from '../utils/formatters';
+import { formatMoney } from '../utils/formatters';
 import type { AttractionCategory } from '../core/types';
 
 const CATEGORIES: { id: AttractionCategory; label: string; emoji: string }[] = [
@@ -72,7 +72,8 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
         <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-8">
           {filteredBuildings.map((building) => {
             const canAfford = money >= building.baseCost;
-            const netIncome = building.baseIncome - building.maintenanceCost;
+            const profit = building.baseIncome - building.maintenanceCost;
+            const isProfitable = profit >= 0;
 
             return (
               <motion.button
@@ -89,15 +90,17 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
                 <span className="text-4xl">{building.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">{building.name}</div>
-                  <div className="text-sm text-park-muted">{building.description}</div>
-                  <div className={`text-sm font-medium mt-1 ${netIncome >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
-                    {formatMoneyPerSec(netIncome)} net
+                  <div className="text-xs text-park-muted mt-1">
+                    Earns {formatMoney(building.baseIncome)}/s • Costs {formatMoney(building.maintenanceCost)}/s
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`font-semibold ${canAfford ? 'text-park-accent' : 'text-park-danger'}`}>
+                  <div className={`font-bold ${isProfitable ? 'text-park-success' : 'text-park-danger'}`}>
+                    {isProfitable ? '+' : ''}{formatMoney(profit)}/s
+                  </div>
+                  <div className={`text-sm ${canAfford ? 'text-park-accent' : 'text-park-danger'}`}>
                     {formatMoney(building.baseCost)}
-                  </span>
+                  </div>
                 </div>
               </motion.button>
             );

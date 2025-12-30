@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import type { Slot } from '../core/types';
 import { useGameStore } from '../store/gameStore';
 import { getBuildingById } from '../data/buildings';
-import { formatMoney, formatMoneyPerSec } from '../utils/formatters';
+import { formatMoney } from '../utils/formatters';
 import { DEMOLISH_REFUND_RATE } from '../data/constants';
 
 type Props = {
@@ -26,6 +26,7 @@ export function SlotDetail({ slot, onClose }: Props) {
   const upgradeCost = calculateUpgradeCost(slot.id);
   const canUpgrade = money >= upgradeCost;
   const income = calculateSlotIncome(slot);
+  const isProfitable = income.net >= 0;
 
   // Estimate refund
   const estimatedRefund = Math.floor(building.baseCost * (1 + (slot.level - 1) * 0.5) * DEMOLISH_REFUND_RATE);
@@ -77,25 +78,22 @@ export function SlotDetail({ slot, onClose }: Props) {
               <h2 className="text-xl font-bold">{building.name}</h2>
               <p className="text-sm text-park-muted">Level {slot.level}</p>
             </div>
+            <div className={`text-xl font-bold ${isProfitable ? 'text-park-success' : 'text-park-danger'}`}>
+              {isProfitable ? '+' : ''}{formatMoney(income.net)}/s
+            </div>
           </div>
         </div>
 
         <div className="p-4 space-y-4 pb-8">
-          {/* Income breakdown */}
-          <div className="bg-park-bg rounded-xl p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-park-muted">Income</span>
-              <span className="text-park-success">+{formatMoneyPerSec(income.gross)}</span>
+          {/* Simple breakdown */}
+          <div className="bg-park-bg rounded-xl p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-park-muted">Earns</span>
+              <span className="text-park-success font-medium">+{formatMoney(income.gross)}/s</span>
             </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-park-muted">Upkeep</span>
-              <span className="text-park-danger">-{formatMoneyPerSec(income.maintenance)}</span>
-            </div>
-            <div className="border-t border-park-muted/30 pt-2 flex justify-between items-center">
-              <span className="font-medium">Net Profit</span>
-              <span className={`font-bold text-lg ${income.net >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
-                {formatMoneyPerSec(income.net)}
-              </span>
+            <div className="flex justify-between items-center">
+              <span className="text-park-muted">Costs</span>
+              <span className="text-park-danger font-medium">-{formatMoney(income.maintenance)}/s</span>
             </div>
           </div>
 

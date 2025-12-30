@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-import { formatMoney, formatMoneyPerSec } from '../utils/formatters';
+import { formatMoney } from '../utils/formatters';
 import { SettingsMenu } from './SettingsMenu';
 
 export function Header() {
@@ -9,7 +9,7 @@ export function Header() {
   const unlockedSlots = useGameStore((s) => s.unlockedSlots);
   const calculateIncome = useGameStore((s) => s.calculateIncome);
 
-  const { gross, maintenance, net } = calculateIncome();
+  const { net } = calculateIncome();
 
   return (
     <header className="sticky top-0 z-10 bg-park-card border-b border-park-muted/30 px-4 py-3 shadow-lg relative">
@@ -23,15 +23,8 @@ export function Header() {
           >
             {formatMoney(money)}
           </motion.div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className={net >= 0 ? 'text-park-success' : 'text-park-danger'}>
-              {formatMoneyPerSec(net)}
-            </span>
-            {slots.length > 0 && (
-              <span className="text-park-muted">
-                (↑{formatMoney(gross)} ↓{formatMoney(maintenance)})
-              </span>
-            )}
+          <div className={`text-sm font-medium ${net >= 0 ? 'text-park-success' : 'text-park-danger'}`}>
+            {net >= 0 ? '+' : ''}{formatMoney(net)}/s
           </div>
         </div>
         <div className="text-right">
