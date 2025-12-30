@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { formatMoney, formatMoneyPerSec, formatNumber } from '../utils/formatters';
+import { SettingsMenu } from './SettingsMenu';
 
 export function Header() {
   const money = useGameStore((s) => s.money);
@@ -10,8 +11,8 @@ export function Header() {
   const income = calculateIncome();
 
   return (
-    <header className="sticky top-0 z-10 bg-park-card border-b border-park-muted/30 px-4 py-3 shadow-lg">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-10 bg-park-card border-b border-park-muted/30 px-4 py-3 shadow-lg relative">
+      <div className="flex items-center justify-between pr-10">
         <div>
           <motion.div
             key={Math.floor(money)}
@@ -33,6 +34,7 @@ export function Header() {
           <div className="text-xs text-park-muted">guests</div>
         </div>
       </div>
+      <SettingsMenu />
     </header>
   );
 }
