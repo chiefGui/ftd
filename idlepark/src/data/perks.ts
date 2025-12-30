@@ -17,11 +17,10 @@ export const PERKS: Perk[] = [
     id: 'park_rank_2',
     name: 'Park Expansion',
     emoji: '🌟',
-    description: 'Unlock all attractions & +12 land slots',
+    description: 'Unlock +12 land slots',
     cost: 1000000,
     effects: [
       { type: 'bonusSlots', value: 12 },
-      { type: 'unlockBuildings', value: 'park_rank_2' },
     ],
   },
 ];
