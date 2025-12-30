@@ -32,12 +32,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newMoney = state.money + income * deltaSeconds;
     const newTotalEarnings = state.totalEarnings + Math.max(0, income * deltaSeconds);
 
-    // Calculate guests based on attraction capacity
+    // Calculate guests based on attraction capacity (no attractions = no guests)
     const totalCapacity = state.attractions.reduce((sum, a) => {
       const def = getAttractionById(a.id);
       return sum + (def?.capacity ?? 0) * a.level;
     }, 0);
-    const guestRate = BASE_GUEST_RATE + totalCapacity * GUEST_PER_CAPACITY;
+    const guestRate = state.attractions.length > 0
+      ? BASE_GUEST_RATE + totalCapacity * GUEST_PER_CAPACITY
+      : 0;
     const newGuests = Math.max(0, state.guests + guestRate * deltaSeconds);
 
     // Check for game over
@@ -105,6 +107,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         { id, level: 1, purchasedAt: Date.now() },
       ],
     });
+    // Save immediately after purchase
+    get().save();
     return true;
   },
 
@@ -122,6 +126,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         a.id === id ? { ...a, level: a.level + 1 } : a
       ),
     });
+    // Save immediately after upgrade
+    get().save();
     return true;
   },
 
