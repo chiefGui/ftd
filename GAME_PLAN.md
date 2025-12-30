@@ -10,6 +10,7 @@ A mobile-first, browser-based idle game where players build and manage an amusem
 2. **Respect player time** - Meaningful offline progress
 3. **Visual delight** - Engaging animations and feedback
 4. **Clean architecture** - Easy to extend with new features
+5. **Grounded numbers** - Real-world scale, no "quintillions"
 
 ---
 
@@ -133,16 +134,30 @@ interface Attraction {
 }
 ```
 
-**Example attractions:**
-| Tier | Name | Base Income | Base Cost |
-|------|------|-------------|-----------|
-| Basic | Carousel | $1/s | $50 |
-| Basic | Bumper Cars | $5/s | $250 |
-| Standard | Ferris Wheel | $25/s | $1,500 |
-| Standard | Log Flume | $100/s | $10K |
-| Premium | Roller Coaster | $500/s | $75K |
-| Premium | Drop Tower | $2K/s | $500K |
-| Legendary | Mega Coaster | $10K/s | $5M |
+**Grounded Economy - Planet Coaster Style:**
+
+Numbers stay real and meaningful. No exponential inflation.
+
+| Tier | Name | Cost | Income/guest | Capacity |
+|------|------|------|--------------|----------|
+| Basic | Carousel | $3,000 | $2 | 12 |
+| Basic | Bumper Cars | $8,000 | $3 | 8 |
+| Standard | Ferris Wheel | $25,000 | $5 | 20 |
+| Standard | Log Flume | $45,000 | $6 | 12 |
+| Premium | Roller Coaster | $150,000 | $10 | 24 |
+| Premium | Drop Tower | $200,000 | $12 | 16 |
+
+**Progression feels real:**
+- Start with $10,000 seed money
+- Early game: $500-5,000 in the bank
+- Mid game: $20,000-100,000
+- Late game: $200,000-500,000
+- Prestige: ~$1-2 million park value
+
+**Depth over inflation:**
+- Upgrade quality, not quantity
+- Each level = better experience, slight revenue boost
+- Prestige unlocks new attraction types, not bigger numbers
 
 ### 2. Upgrades (Multipliers)
 Global and per-attraction upgrades:
@@ -299,9 +314,5 @@ interface GameSave {
 | Offline progress | No cap, full earnings |
 | Deployment | GitHub Pages |
 | Gameplay | Ultra simple, no tutorial needed |
-
-## Open Questions
-
-1. **Monetization**: Purely free, ads, or IAP? (affects design)
-2. **Prestige depth**: Simple reset or complex meta-progression?
-3. **Social features**: Leaderboards, sharing, none?
+| Economy | Grounded, real-world numbers (Planet Coaster style) |
+| Monetization | TBD (not priority for MVP) |
