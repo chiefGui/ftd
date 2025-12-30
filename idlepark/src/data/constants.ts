@@ -1,26 +1,33 @@
-// Starting money
+// === STARTING VALUES ===
 export const STARTING_MONEY = 10000;
+export const STARTING_SLOTS = 4;
+export const MAX_SLOTS = 12;
 
-// How much upgrade cost increases per level (1.15 = 15% more each level)
-export const UPGRADE_COST_MULTIPLIER = 1.15;
+// === SLOT UNLOCK COSTS ===
+// Exponential curve: $15K → $250K
+export const SLOT_UNLOCK_COSTS = [
+  15000,   // Slot 5
+  25000,   // Slot 6
+  40000,   // Slot 7
+  60000,   // Slot 8
+  90000,   // Slot 9
+  130000,  // Slot 10
+  180000,  // Slot 11
+  250000,  // Slot 12
+];
 
-// How much income increases per level (1.1 = 10% more each level)
-export const INCOME_LEVEL_MULTIPLIER = 1.1;
+// === UPGRADE SCALING ===
+export const UPGRADE_COST_MULTIPLIER = 1.15;  // 15% more per level
+export const INCOME_LEVEL_MULTIPLIER = 1.1;   // 10% more income per level
+export const MAINTENANCE_LEVEL_MULTIPLIER = 1.05; // 5% more upkeep per level
 
-// Base guests that visit per second (affected by attractions)
+// === DEMOLISH ===
+export const DEMOLISH_REFUND_RATE = 0.5; // 50% refund
+
+// === GUESTS ===
 export const BASE_GUEST_RATE = 0.5;
-
-// Each attraction adds this many guests per second per capacity point
 export const GUEST_PER_CAPACITY = 0.1;
 
-// Maintenance cost multiplier per level (1.05 = 5% more per level)
-export const MAINTENANCE_LEVEL_MULTIPLIER = 1.05;
-
-// Save key for IndexedDB
-export const SAVE_KEY = 'idlepark_save';
-
-// Auto-save interval in milliseconds
-export const AUTO_SAVE_INTERVAL = 30000;
-
-// Tick rate in milliseconds
-export const TICK_RATE = 100;
+// === PERSISTENCE ===
+export const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+export const TICK_RATE = 100; // 10 ticks per second

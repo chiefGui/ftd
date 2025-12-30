@@ -1,45 +1,58 @@
 export type AttractionTier = 'basic' | 'standard' | 'premium';
 export type AttractionCategory = 'ride' | 'food' | 'shop';
 
-export interface AttractionDefinition {
+export type BuildingDefinition = {
   id: string;
   name: string;
   emoji: string;
   category: AttractionCategory;
   tier: AttractionTier;
   baseCost: number;
-  baseIncome: number; // per second at level 1
-  maintenanceCost: number; // fixed cost per second (can cause bankruptcy!)
+  baseIncome: number;
+  maintenanceCost: number;
   capacity: number;
   description: string;
-}
+};
 
-export interface OwnedAttraction {
+export type Slot = {
   id: string;
+  buildingId: string;
   level: number;
-  purchasedAt: number;
-}
+  builtAt: number;
+};
 
-export interface GameState {
+export type GameState = {
   money: number;
   guests: number;
-  attractions: OwnedAttraction[];
+  slots: Slot[];
+  unlockedSlots: number;
   lastSaveTime: number;
   totalEarnings: number;
   gameStartedAt: number;
   isGameOver: boolean;
-}
+};
 
-export interface GameStore extends GameState {
-  // Actions
+export type GameStore = GameState & {
+  // Core actions
   tick: (deltaSeconds: number) => void;
-  buyAttraction: (id: string) => boolean;
-  upgradeAttraction: (id: string) => boolean;
-  calculateIncome: () => number;
-  calculateUpgradeCost: (id: string) => number;
-  calculateAttractionIncome: (attraction: OwnedAttraction) => number;
+
+  // Building actions
+  buildInSlot: (slotIndex: number, buildingId: string) => boolean;
+  upgradeSlot: (slotId: string) => boolean;
+  demolishSlot: (slotId: string) => number; // returns refund amount
+
+  // Slot actions
+  unlockNextSlot: () => boolean;
+  getSlotUnlockCost: () => number;
+
+  // Calculations
+  calculateIncome: () => { gross: number; maintenance: number; net: number };
+  calculateSlotIncome: (slot: Slot) => { gross: number; maintenance: number; net: number };
+  calculateUpgradeCost: (slotId: string) => number;
+
+  // Persistence
   applyOfflineProgress: () => number;
   resetGame: () => void;
   save: () => void;
   load: () => Promise<void>;
-}
+};

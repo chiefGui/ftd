@@ -1,20 +1,25 @@
 import { create } from 'zustand';
-import type { GameState, GameStore, OwnedAttraction } from '../core/types';
-import { getAttractionById } from '../data/attractions';
+import type { GameState, GameStore, Slot } from '../core/types';
+import { getBuildingById } from '../data/buildings';
 import {
   STARTING_MONEY,
+  STARTING_SLOTS,
+  MAX_SLOTS,
+  SLOT_UNLOCK_COSTS,
   UPGRADE_COST_MULTIPLIER,
   INCOME_LEVEL_MULTIPLIER,
+  MAINTENANCE_LEVEL_MULTIPLIER,
+  DEMOLISH_REFUND_RATE,
   BASE_GUEST_RATE,
   GUEST_PER_CAPACITY,
-  MAINTENANCE_LEVEL_MULTIPLIER,
 } from '../data/constants';
 import { saveGame, loadGame, clearSave } from './db';
 
 const createInitialState = (): GameState => ({
   money: STARTING_MONEY,
   guests: 0,
-  attractions: [],
+  slots: [],
+  unlockedSlots: STARTING_SLOTS,
   lastSaveTime: Date.now(),
   totalEarnings: 0,
   gameStartedAt: Date.now(),
@@ -28,21 +33,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     if (state.isGameOver) return;
 
-    const income = state.calculateIncome();
-    const newMoney = state.money + income * deltaSeconds;
-    const newTotalEarnings = state.totalEarnings + Math.max(0, income * deltaSeconds);
+    const { net } = state.calculateIncome();
+    const newMoney = state.money + net * deltaSeconds;
+    const newTotalEarnings = state.totalEarnings + Math.max(0, net * deltaSeconds);
 
-    // Calculate guests based on attraction capacity (no attractions = no guests)
-    const totalCapacity = state.attractions.reduce((sum, a) => {
-      const def = getAttractionById(a.id);
-      return sum + (def?.capacity ?? 0) * a.level;
+    // Calculate guests based on total capacity
+    const totalCapacity = state.slots.reduce((sum, slot) => {
+      const def = getBuildingById(slot.buildingId);
+      return sum + (def?.capacity ?? 0) * slot.level;
     }, 0);
-    const guestRate = state.attractions.length > 0
+    const guestRate = state.slots.length > 0
       ? BASE_GUEST_RATE + totalCapacity * GUEST_PER_CAPACITY
       : 0;
     const newGuests = Math.max(0, state.guests + guestRate * deltaSeconds);
 
-    // Check for game over
+    // Check for bankruptcy
     if (newMoney < 0) {
       set({ money: 0, isGameOver: true });
       return;
@@ -55,88 +60,140 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  calculateIncome: () => {
+  buildInSlot: (slotIndex: number, buildingId: string) => {
     const state = get();
-    let grossIncome = 0;
-    let maintenanceCost = 0;
+    const def = getBuildingById(buildingId);
+    if (!def) return false;
+    if (slotIndex >= state.unlockedSlots) return false;
+    if (state.money < def.baseCost) return false;
 
-    for (const attraction of state.attractions) {
-      const def = getAttractionById(attraction.id);
-      if (!def) continue;
-
-      // Income scales with level
-      grossIncome += def.baseIncome * Math.pow(INCOME_LEVEL_MULTIPLIER, attraction.level - 1);
-
-      // Fixed maintenance cost per attraction (scales slightly with level)
-      maintenanceCost += def.maintenanceCost * Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, attraction.level - 1);
+    // Check if slot is already occupied
+    const existingSlot = state.slots.find((_, i) => i === slotIndex);
+    if (existingSlot && state.slots.indexOf(existingSlot) === slotIndex) {
+      // Slot position logic - we use array indices
     }
 
-    // Net income can be NEGATIVE if maintenance > income (bankruptcy risk!)
-    return grossIncome - maintenanceCost;
+    const newSlot: Slot = {
+      id: `slot_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      buildingId,
+      level: 1,
+      builtAt: Date.now(),
+    };
+
+    // Insert at the correct position or append
+    const newSlots = [...state.slots];
+    if (slotIndex < newSlots.length) {
+      // Replace existing slot (shouldn't happen if UI is correct)
+      newSlots[slotIndex] = newSlot;
+    } else {
+      newSlots.push(newSlot);
+    }
+
+    set({
+      money: state.money - def.baseCost,
+      slots: newSlots,
+    });
+    get().save();
+    return true;
   },
 
-  calculateAttractionIncome: (attraction: OwnedAttraction) => {
-    const def = getAttractionById(attraction.id);
+  upgradeSlot: (slotId: string) => {
+    const state = get();
+    const slotIndex = state.slots.findIndex((s) => s.id === slotId);
+    if (slotIndex === -1) return false;
+
+    const cost = state.calculateUpgradeCost(slotId);
+    if (state.money < cost) return false;
+
+    const newSlots = state.slots.map((s) =>
+      s.id === slotId ? { ...s, level: s.level + 1 } : s
+    );
+
+    set({
+      money: state.money - cost,
+      slots: newSlots,
+    });
+    get().save();
+    return true;
+  },
+
+  demolishSlot: (slotId: string) => {
+    const state = get();
+    const slot = state.slots.find((s) => s.id === slotId);
+    if (!slot) return 0;
+
+    const def = getBuildingById(slot.buildingId);
     if (!def) return 0;
 
-    const grossIncome = def.baseIncome * Math.pow(INCOME_LEVEL_MULTIPLIER, attraction.level - 1);
-    const maintenance = def.maintenanceCost * Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, attraction.level - 1);
-    return grossIncome - maintenance;
+    // Calculate refund: base cost * refund rate * level factor
+    const totalInvested = def.baseCost +
+      Array.from({ length: slot.level - 1 }, (_, i) =>
+        Math.floor(def.baseCost * Math.pow(UPGRADE_COST_MULTIPLIER, i + 1))
+      ).reduce((a, b) => a + b, 0);
+    const refund = Math.floor(totalInvested * DEMOLISH_REFUND_RATE);
+
+    set({
+      money: state.money + refund,
+      slots: state.slots.filter((s) => s.id !== slotId),
+    });
+    get().save();
+    return refund;
   },
 
-  calculateUpgradeCost: (id: string) => {
+  unlockNextSlot: () => {
     const state = get();
-    const attraction = state.attractions.find((a) => a.id === id);
-    const def = getAttractionById(id);
+    if (state.unlockedSlots >= MAX_SLOTS) return false;
 
-    if (!def) return Infinity;
+    const cost = state.getSlotUnlockCost();
+    if (state.money < cost) return false;
 
-    if (!attraction) {
-      // First purchase cost
-      return def.baseCost;
+    set({
+      money: state.money - cost,
+      unlockedSlots: state.unlockedSlots + 1,
+    });
+    get().save();
+    return true;
+  },
+
+  getSlotUnlockCost: () => {
+    const state = get();
+    const index = state.unlockedSlots - STARTING_SLOTS;
+    if (index < 0 || index >= SLOT_UNLOCK_COSTS.length) return Infinity;
+    return SLOT_UNLOCK_COSTS[index];
+  },
+
+  calculateIncome: () => {
+    const state = get();
+    let gross = 0;
+    let maintenance = 0;
+
+    for (const slot of state.slots) {
+      const slotIncome = state.calculateSlotIncome(slot);
+      gross += slotIncome.gross;
+      maintenance += slotIncome.maintenance;
     }
 
-    // Upgrade cost scales with level
-    return Math.floor(def.baseCost * Math.pow(UPGRADE_COST_MULTIPLIER, attraction.level));
+    return { gross, maintenance, net: gross - maintenance };
   },
 
-  buyAttraction: (id: string) => {
-    const state = get();
-    const def = getAttractionById(id);
-    if (!def) return false;
+  calculateSlotIncome: (slot: Slot) => {
+    const def = getBuildingById(slot.buildingId);
+    if (!def) return { gross: 0, maintenance: 0, net: 0 };
 
-    const cost = def.baseCost;
-    if (state.money < cost) return false;
-
-    set({
-      money: state.money - cost,
-      attractions: [
-        ...state.attractions,
-        { id, level: 1, purchasedAt: Date.now() },
-      ],
-    });
-    // Save immediately after purchase
-    get().save();
-    return true;
+    const gross = def.baseIncome * Math.pow(INCOME_LEVEL_MULTIPLIER, slot.level - 1);
+    const maintenance = def.maintenanceCost * Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, slot.level - 1);
+    return { gross, maintenance, net: gross - maintenance };
   },
 
-  upgradeAttraction: (id: string) => {
+  calculateUpgradeCost: (slotId: string) => {
     const state = get();
-    const attraction = state.attractions.find((a) => a.id === id);
-    if (!attraction) return false;
+    const slot = state.slots.find((s) => s.id === slotId);
+    if (!slot) return Infinity;
 
-    const cost = state.calculateUpgradeCost(id);
-    if (state.money < cost) return false;
+    const def = getBuildingById(slot.buildingId);
+    if (!def) return Infinity;
 
-    set({
-      money: state.money - cost,
-      attractions: state.attractions.map((a) =>
-        a.id === id ? { ...a, level: a.level + 1 } : a
-      ),
-    });
-    // Save immediately after upgrade
-    get().save();
-    return true;
+    return Math.floor(def.baseCost * Math.pow(UPGRADE_COST_MULTIPLIER, slot.level));
   },
 
   applyOfflineProgress: () => {
@@ -146,10 +203,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (offlineSeconds <= 0) return 0;
 
-    const income = state.calculateIncome();
-    const offlineEarnings = income * offlineSeconds;
+    const { net } = state.calculateIncome();
+    const offlineEarnings = net * offlineSeconds;
 
-    // Apply earnings (can be negative if maintenance > income)
     const newMoney = state.money + offlineEarnings;
 
     if (newMoney < 0) {
@@ -176,7 +232,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const saveState: GameState = {
       money: state.money,
       guests: state.guests,
-      attractions: state.attractions,
+      slots: state.slots,
+      unlockedSlots: state.unlockedSlots,
       lastSaveTime: Date.now(),
       totalEarnings: state.totalEarnings,
       gameStartedAt: state.gameStartedAt,

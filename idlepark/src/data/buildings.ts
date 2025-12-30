@@ -1,6 +1,6 @@
-import type { AttractionDefinition } from '../core/types';
+import type { BuildingDefinition, AttractionCategory } from '../core/types';
 
-export const ATTRACTIONS: AttractionDefinition[] = [
+export const BUILDINGS: BuildingDefinition[] = [
   // === RIDES ===
   {
     id: 'carousel',
@@ -12,7 +12,7 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 3,
     maintenanceCost: 0.5,
     capacity: 12,
-    description: 'A classic merry-go-round',
+    description: 'Classic merry-go-round',
   },
   {
     id: 'bumper_cars',
@@ -24,7 +24,7 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 6,
     maintenanceCost: 1,
     capacity: 8,
-    description: 'Crash into your friends!',
+    description: 'Crash into friends!',
   },
   {
     id: 'ferris_wheel',
@@ -36,11 +36,11 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 18,
     maintenanceCost: 3,
     capacity: 20,
-    description: 'See the whole park from above',
+    description: 'See the whole park',
   },
   {
     id: 'log_flume',
-    name: 'Log Flume',
+    name: 'Splash Mountain',
     emoji: '🌊',
     category: 'ride',
     tier: 'standard',
@@ -48,11 +48,11 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 30,
     maintenanceCost: 5,
     capacity: 12,
-    description: 'Get soaked on this water ride',
+    description: 'Get soaked!',
   },
   {
     id: 'roller_coaster',
-    name: 'Roller Coaster',
+    name: 'Steel Vengeance',
     emoji: '🎢',
     category: 'ride',
     tier: 'premium',
@@ -60,11 +60,11 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 85,
     maintenanceCost: 15,
     capacity: 24,
-    description: 'The ultimate thrill ride',
+    description: 'Ultimate thrill ride',
   },
   {
     id: 'drop_tower',
-    name: 'Drop Tower',
+    name: 'Tower of Terror',
     emoji: '🗼',
     category: 'ride',
     tier: 'premium',
@@ -77,8 +77,8 @@ export const ATTRACTIONS: AttractionDefinition[] = [
 
   // === FOOD ===
   {
-    id: 'hotdog_stand',
-    name: 'Hotdog Stand',
+    id: 'nathans',
+    name: "Nathan's Famous",
     emoji: '🌭',
     category: 'food',
     tier: 'basic',
@@ -86,11 +86,11 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 2,
     maintenanceCost: 0.3,
     capacity: 6,
-    description: 'Quick and tasty snacks',
+    description: 'Famous hot dogs',
   },
   {
-    id: 'ice_cream',
-    name: 'Ice Cream Cart',
+    id: 'ben_jerrys',
+    name: "Ben & Jerry's",
     emoji: '🍦',
     category: 'food',
     tier: 'basic',
@@ -98,11 +98,23 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 2.5,
     maintenanceCost: 0.4,
     capacity: 8,
-    description: 'Cool treats for hot days',
+    description: 'Premium ice cream',
   },
   {
-    id: 'pizza_place',
-    name: 'Pizza Place',
+    id: 'starbucks',
+    name: 'Starbucks',
+    emoji: '☕',
+    category: 'food',
+    tier: 'basic',
+    baseCost: 4000,
+    baseIncome: 4,
+    maintenanceCost: 0.6,
+    capacity: 10,
+    description: 'Coffee & drinks',
+  },
+  {
+    id: 'pizza_hut',
+    name: 'Pizza Hut',
     emoji: '🍕',
     category: 'food',
     tier: 'standard',
@@ -113,8 +125,8 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     description: 'Everyone loves pizza',
   },
   {
-    id: 'burger_joint',
-    name: 'Burger Joint',
+    id: 'mcdonalds',
+    name: "McDonald's",
     emoji: '🍔',
     category: 'food',
     tier: 'standard',
@@ -122,25 +134,25 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 15,
     maintenanceCost: 2.5,
     capacity: 18,
-    description: 'Juicy burgers and fries',
+    description: 'Burgers and fries',
   },
   {
-    id: 'fancy_restaurant',
-    name: 'Fine Dining',
-    emoji: '🍽️',
+    id: 'cheesecake_factory',
+    name: 'Cheesecake Factory',
+    emoji: '🍰',
     category: 'food',
     tier: 'premium',
     baseCost: 80000,
     baseIncome: 50,
     maintenanceCost: 10,
     capacity: 25,
-    description: 'Upscale dining experience',
+    description: 'Upscale dining',
   },
 
   // === SHOPS ===
   {
     id: 'balloon_stand',
-    name: 'Balloon Stand',
+    name: 'Balloon Cart',
     emoji: '🎈',
     category: 'shop',
     tier: 'basic',
@@ -148,23 +160,23 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 1.5,
     maintenanceCost: 0.2,
     capacity: 4,
-    description: 'Colorful balloons for kids',
+    description: 'Colorful balloons',
   },
   {
-    id: 'gift_shop',
-    name: 'Gift Shop',
-    emoji: '🎁',
+    id: 'disney_store',
+    name: 'Disney Store',
+    emoji: '🏰',
     category: 'shop',
     tier: 'basic',
     baseCost: 5000,
     baseIncome: 4,
     maintenanceCost: 0.6,
     capacity: 10,
-    description: 'Souvenirs and memorabilia',
+    description: 'Magical souvenirs',
   },
   {
     id: 'photo_booth',
-    name: 'Photo Booth',
+    name: 'Polaroid Studio',
     emoji: '📸',
     category: 'shop',
     tier: 'standard',
@@ -172,11 +184,11 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     baseIncome: 10,
     maintenanceCost: 1.5,
     capacity: 8,
-    description: 'Capture the memories',
+    description: 'Capture memories',
   },
   {
-    id: 'arcade',
-    name: 'Arcade',
+    id: 'dave_busters',
+    name: "Dave & Buster's",
     emoji: '🕹️',
     category: 'shop',
     tier: 'standard',
@@ -187,23 +199,23 @@ export const ATTRACTIONS: AttractionDefinition[] = [
     description: 'Games and prizes',
   },
   {
-    id: 'merch_store',
-    name: 'Merch Megastore',
-    emoji: '👕',
+    id: 'nike',
+    name: 'Nike Store',
+    emoji: '👟',
     category: 'shop',
     tier: 'premium',
     baseCost: 100000,
     baseIncome: 60,
     maintenanceCost: 12,
     capacity: 30,
-    description: 'Official park merchandise',
+    description: 'Just Do It',
   },
 ];
 
-export const getAttractionById = (id: string): AttractionDefinition | undefined => {
-  return ATTRACTIONS.find((a) => a.id === id);
+export const getBuildingById = (id: string): BuildingDefinition | undefined => {
+  return BUILDINGS.find((b) => b.id === id);
 };
 
-export const getAttractionsByCategory = (category: AttractionDefinition['category']) => {
-  return ATTRACTIONS.filter((a) => a.category === category);
+export const getBuildingsByCategory = (category: AttractionCategory) => {
+  return BUILDINGS.filter((b) => b.category === category);
 };

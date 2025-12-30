@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
-import { AttractionCard } from './components/AttractionCard';
-import { BuildMenu } from './components/BuildMenu';
+import { SlotGrid } from './components/SlotGrid';
 import { GameOverModal } from './components/GameOverModal';
 import { OfflineModal } from './components/OfflineModal';
 import { useGameStore } from './store/gameStore';
@@ -12,7 +11,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [offlineEarnings, setOfflineEarnings] = useState<number | null>(null);
 
-  const attractions = useGameStore((s) => s.attractions);
   const load = useGameStore((s) => s.load);
   const applyOfflineProgress = useGameStore((s) => s.applyOfflineProgress);
 
@@ -47,25 +45,10 @@ function App() {
     <div className="h-full flex flex-col bg-park-bg">
       <Header />
 
-      <main className="flex-1 overflow-y-auto p-4 pb-24">
-        {attractions.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center px-8">
-            <div className="text-6xl mb-4">🎡</div>
-            <h2 className="text-xl font-bold mb-2">Welcome to Idlepark!</h2>
-            <p className="text-park-muted mb-6">
-              Build your first attraction to start earning money.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {attractions.map((attraction) => (
-              <AttractionCard key={attraction.id} attraction={attraction} />
-            ))}
-          </div>
-        )}
+      <main className="flex-1 overflow-y-auto">
+        <SlotGrid />
       </main>
 
-      <BuildMenu />
       <GameOverModal />
 
       <AnimatePresence>
