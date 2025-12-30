@@ -10,13 +10,22 @@ export type BuildingDefinition = {
   baseCost: number;
   maintenanceCost: number;
   description: string;
+
   // Ride stats
   prestige?: number;      // How desirable/exciting (adds to park reputation)
-  rideCapacity?: number;  // Guests it can handle per minute (affects queues)
+  rideCapacity?: number;  // Guests it can handle (affects queues)
+
   // Shop stats
   spendingRate?: number;  // $ earned per guest per second
-  // Infrastructure stats
-  coverage?: number;      // # of guests it can support
+  hungerCapacity?: number; // How many guests it can feed (food shops only)
+
+  // Infrastructure stats - specialized needs
+  comfortCapacity?: number; // Restrooms, benches, info booth
+  safetyCapacity?: number;  // Security, first aid
+
+  // Legacy (deprecated, kept for compatibility)
+  coverage?: number;
+
   // Unlock requirement
   requiredPerk?: string;  // Perk ID required to build
 };
@@ -32,7 +41,11 @@ export type ParkStats = {
   // Capacity
   maxGuests: number;          // From unlocked slots
   rideCapacity: number;       // How many guests rides can handle
-  infrastructureCoverage: number;
+
+  // Capacities for each need
+  totalHungerCapacity: number;
+  totalComfortCapacity: number;
+  totalSafetyCapacity: number;
 
   // Reputation & Demand
   reputation: number;         // Sum of ride prestige
@@ -42,10 +55,16 @@ export type ParkStats = {
   // Guest counts
   currentGuests: number;
 
-  // Satisfaction breakdown (each 0-1, combined into overall)
-  rideSatisfaction: number;   // Are rides overcrowded?
-  facilitySatisfaction: number; // Enough restrooms, etc?
-  overallSatisfaction: number;  // Combined
+  // 4 Core Guest Needs (each 0-1)
+  entertainmentSatisfaction: number; // Are rides overcrowded?
+  hungerSatisfaction: number;        // Can guests get food?
+  comfortSatisfaction: number;       // Restrooms, rest areas?
+  safetySatisfaction: number;        // Security, first aid?
+  overallSatisfaction: number;       // Weighted average
+
+  // Legacy aliases for compatibility
+  rideSatisfaction: number;
+  facilitySatisfaction: number;
 
   // Income
   ticketIncome: number;       // From guests arriving

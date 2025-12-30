@@ -25,23 +25,36 @@ export function BuildingPreview({ building, slotIndex, onClose, onBuilt }: Props
   const getContent = () => {
     if (building.category === 'ride') {
       return {
-        mainStat: `Attracts up to ${building.prestige} guests`,
-        secondaryStat: `Can handle ${building.rideCapacity} guests at once`,
+        mainStat: `⭐ Attracts up to ${building.prestige} guests`,
+        secondaryStat: `🎠 Can entertain ${building.rideCapacity} guests at once`,
         hint: 'More rides = more guests want to visit',
       };
     }
     if (building.category === 'shop') {
+      const hungerPart = building.hungerCapacity
+        ? `🍔 Feeds ${building.hungerCapacity} hungry guests`
+        : null;
       return {
-        mainStat: `Earns ${formatMoney(building.spendingRate ?? 0)} per guest`,
-        secondaryStat: 'Every second, per guest in park',
-        hint: 'More guests = more money from shops',
+        mainStat: hungerPart || `💵 Earns ${formatMoney(building.spendingRate ?? 0)} per guest`,
+        secondaryStat: hungerPart
+          ? `💵 Plus earns ${formatMoney(building.spendingRate ?? 0)} per guest/sec`
+          : 'Every second, per guest in park',
+        hint: 'Hungry guests leave faster without food!',
       };
     }
     if (building.category === 'infrastructure') {
+      const comfortPart = building.comfortCapacity
+        ? `🚻 Provides comfort for ${building.comfortCapacity} guests`
+        : null;
+      const safetyPart = building.safetyCapacity
+        ? `🛡️ Provides safety for ${building.safetyCapacity} guests`
+        : null;
       return {
-        mainStat: `Keeps ${building.coverage} guests happy`,
-        secondaryStat: 'Without facilities, guests get upset',
-        hint: 'Happy guests stay longer!',
+        mainStat: comfortPart || safetyPart || 'Park amenity',
+        secondaryStat: comfortPart && safetyPart
+          ? safetyPart
+          : 'Keeps guests comfortable and safe',
+        hint: 'Uncomfortable guests leave faster!',
       };
     }
     return { mainStat: '', secondaryStat: '', hint: '' };
