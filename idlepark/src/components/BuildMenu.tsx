@@ -26,13 +26,13 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
   const filteredBuildings = getBuildingsByCategory(activeCategory);
 
   const getStatLabel = (building: BuildingDefinition) => {
-    if (building.category === 'ride' && building.attraction) {
-      return `+${building.attraction} guests/s`;
+    if (building.category === 'ride') {
+      return `⭐${building.prestige} prestige • ${building.rideCapacity} cap`;
     }
-    if (building.category === 'shop' && building.spendingRate) {
-      return `${formatMoney(building.spendingRate)}/guest/s`;
+    if (building.category === 'shop') {
+      return `${formatMoney(building.spendingRate ?? 0)}/guest/s`;
     }
-    if (building.category === 'infrastructure' && building.coverage) {
+    if (building.category === 'infrastructure') {
       return `Covers ${building.coverage} guests`;
     }
     return '';
@@ -58,7 +58,6 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
           <div className="w-12 h-1 bg-park-muted/50 rounded-full mx-auto mb-3" />
           <h2 className="text-xl font-bold text-center mb-4">Build</h2>
 
-          {/* Category tabs */}
           <div className="flex gap-2">
             {CATEGORIES.map((cat) => (
               <button
@@ -113,7 +112,6 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
         </div>
       </motion.div>
 
-      {/* Building Preview */}
       <AnimatePresence>
         {selectedBuilding && (
           <BuildingPreview

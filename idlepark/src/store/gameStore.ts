@@ -14,7 +14,9 @@ import {
   STAT_LEVEL_MULTIPLIER,
   MAINTENANCE_LEVEL_MULTIPLIER,
   DEMOLISH_REFUND_RATE,
-  SATISFACTION_GUEST_LEAVE_RATE,
+  GUEST_ARRIVAL_RATE,
+  GUEST_DEPARTURE_RATE,
+  GUEST_UNHAPPY_LEAVE_RATE,
   calculateDemand,
 } from '../data/constants';
 import { saveGame, loadGame, clearSave } from './db';
@@ -40,23 +42,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const stats = state.calculateParkStats();
 
-    // Guest flow: new guests arrive, unsatisfied guests leave
+    // === GUEST DYNAMICS ===
     let newGuests = state.guests;
 
-    // Guests arriving (attraction * demand, capped by capacity)
-    const arrivingGuests = stats.totalAttraction * stats.demandMultiplier * deltaSeconds;
-    newGuests = Math.min(newGuests + arrivingGuests, stats.guestCapacity);
-
-    // Guests leaving due to low satisfaction
-    if (stats.satisfaction < 1 && newGuests > 0) {
-      const unsatisfiedRatio = 1 - stats.satisfaction;
-      const leavingGuests = newGuests * unsatisfiedRatio * SATISFACTION_GUEST_LEAVE_RATE * deltaSeconds;
-      newGuests = Math.max(0, newGuests - leavingGuests);
+    // Guests arriving: move toward target based on reputation
+    if (stats.targetGuests > newGuests) {
+      const arriving = (stats.targetGuests - newGuests) * GUEST_ARRIVAL_RATE * deltaSeconds;
+      newGuests += arriving;
     }
 
-    // Calculate income based on current guests
-    const ticketIncome = arrivingGuests * state.ticketPrice; // Only new guests pay tickets
-    const shopIncome = newGuests * stats.totalSpendingRate * deltaSeconds;
+    // Guests leaving naturally
+    const naturalLeaving = newGuests * GUEST_DEPARTURE_RATE * deltaSeconds;
+    newGuests -= naturalLeaving;
+
+    // Extra leaving if unhappy
+    if (stats.overallSatisfaction < 1) {
+      const unhappyRatio = 1 - stats.overallSatisfaction;
+      const unhappyLeaving = newGuests * unhappyRatio * GUEST_UNHAPPY_LEAVE_RATE * deltaSeconds;
+      newGuests -= unhappyLeaving;
+    }
+
+    // Cap at max capacity
+    newGuests = Math.max(0, Math.min(newGuests, stats.maxGuests));
+
+    // === INCOME ===
+    // Ticket income from arriving guests (only new arrivals pay)
+    const arrivingGuests = Math.max(0, newGuests - state.guests + naturalLeaving);
+    const ticketIncome = arrivingGuests * state.ticketPrice;
+
+    // Shop income from all guests in park
+    const shopIncome = newGuests * stats.shopIncome / Math.max(1, stats.currentGuests) * deltaSeconds;
+
     const totalIncome = ticketIncome + shopIncome;
     const totalCosts = stats.totalMaintenance * deltaSeconds;
     const netChange = totalIncome - totalCosts;
@@ -64,7 +80,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newMoney = state.money + netChange;
     const newTotalEarnings = state.totalEarnings + Math.max(0, netChange);
 
-    // Check for bankruptcy
+    // Bankruptcy check
     if (newMoney < 0) {
       set({ money: 0, isGameOver: true });
       return;
@@ -179,13 +195,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   calculateParkStats: (): ParkStats => {
     const state = get();
 
-    // Guest capacity from unlocked slots
-    const guestCapacity = state.unlockedSlots * GUESTS_PER_SLOT;
+    // Max guests from slots
+    const maxGuests = state.unlockedSlots * GUESTS_PER_SLOT;
 
     // Calculate totals from buildings
-    let totalAttraction = 0;
+    let reputation = 0;
+    let rideCapacity = 0;
     let totalSpendingRate = 0;
-    let totalCoverage = 0;
+    let infrastructureCoverage = 0;
     let totalMaintenance = 0;
 
     for (const slot of state.slots) {
@@ -197,44 +214,57 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       totalMaintenance += def.maintenanceCost * maintenanceMultiplier;
 
-      if (def.category === 'ride' && def.attraction) {
-        totalAttraction += def.attraction * levelMultiplier;
-      } else if (def.category === 'shop' && def.spendingRate) {
-        totalSpendingRate += def.spendingRate * levelMultiplier;
-      } else if (def.category === 'infrastructure' && def.coverage) {
-        totalCoverage += def.coverage * levelMultiplier;
+      if (def.category === 'ride') {
+        reputation += (def.prestige ?? 0) * levelMultiplier;
+        rideCapacity += (def.rideCapacity ?? 0) * levelMultiplier;
+      } else if (def.category === 'shop') {
+        totalSpendingRate += (def.spendingRate ?? 0) * levelMultiplier;
+      } else if (def.category === 'infrastructure') {
+        infrastructureCoverage += (def.coverage ?? 0) * levelMultiplier;
       }
     }
 
     // Demand based on ticket price
     const demandMultiplier = calculateDemand(state.ticketPrice);
 
-    // Potential guests (what attraction would bring in)
-    const potentialGuests = totalAttraction * demandMultiplier;
+    // Target guests: reputation * demand (capped at max)
+    const targetGuests = Math.min(reputation * demandMultiplier, maxGuests);
 
-    // Actual guests (capped by capacity, and current guest count)
-    const actualGuests = Math.min(state.guests, guestCapacity);
+    // Current guests
+    const currentGuests = state.guests;
 
-    // Satisfaction: infrastructure coverage vs guests
-    // If no guests, satisfaction is 100%
-    const satisfaction = actualGuests > 0
-      ? Math.min(1, totalCoverage / actualGuests)
+    // === SATISFACTION ===
+    // Ride satisfaction: are rides overcrowded?
+    // If ride capacity >= guests, satisfaction = 100%
+    // Otherwise, ratio of capacity to guests
+    const rideSatisfaction = currentGuests > 0
+      ? Math.min(1, rideCapacity / currentGuests)
       : 1;
 
-    // Income calculations (per second rates)
-    const ticketIncome = totalAttraction * demandMultiplier * state.ticketPrice;
-    const shopIncome = actualGuests * totalSpendingRate;
+    // Facility satisfaction: enough infrastructure?
+    const facilitySatisfaction = currentGuests > 0
+      ? Math.min(1, infrastructureCoverage / currentGuests)
+      : 1;
+
+    // Overall: average of both (could weight differently)
+    const overallSatisfaction = (rideSatisfaction + facilitySatisfaction) / 2;
+
+    // === INCOME RATES (per second) ===
+    const ticketIncome = reputation * demandMultiplier * GUEST_ARRIVAL_RATE * state.ticketPrice;
+    const shopIncome = currentGuests * totalSpendingRate;
     const netIncome = ticketIncome + shopIncome - totalMaintenance;
 
     return {
-      guestCapacity,
-      totalAttraction,
-      totalSpendingRate,
-      totalCoverage,
-      satisfaction,
+      maxGuests,
+      rideCapacity,
+      infrastructureCoverage,
+      reputation,
       demandMultiplier,
-      potentialGuests,
-      actualGuests,
+      targetGuests,
+      currentGuests,
+      rideSatisfaction,
+      facilitySatisfaction,
+      overallSatisfaction,
       ticketIncome,
       shopIncome,
       totalMaintenance,
@@ -262,15 +292,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const stats = state.calculateParkStats();
 
-    // Simulate guest equilibrium during offline time
-    // Guests would reach an equilibrium based on satisfaction
-    const equilibriumGuests = stats.satisfaction >= 1
-      ? Math.min(stats.potentialGuests, stats.guestCapacity)
-      : Math.min(stats.totalCoverage, stats.guestCapacity);
+    // Simulate equilibrium guest count
+    const equilibriumGuests = stats.overallSatisfaction >= 0.8
+      ? Math.min(stats.targetGuests, stats.maxGuests)
+      : Math.min(stats.targetGuests * stats.overallSatisfaction, stats.maxGuests);
 
-    // Calculate offline earnings with equilibrium guests
-    const ticketIncome = stats.totalAttraction * stats.demandMultiplier * state.ticketPrice;
-    const shopIncome = equilibriumGuests * stats.totalSpendingRate;
+    // Calculate offline earnings
+    const ticketIncome = stats.reputation * stats.demandMultiplier * GUEST_ARRIVAL_RATE * state.ticketPrice;
+    const shopIncome = equilibriumGuests * (stats.shopIncome / Math.max(1, stats.currentGuests));
     const netPerSecond = ticketIncome + shopIncome - stats.totalMaintenance;
 
     const offlineEarnings = netPerSecond * offlineSeconds;
@@ -315,7 +344,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   load: async () => {
     const saved = await loadGame();
     if (saved) {
-      // Handle migration: add ticketPrice if missing from old saves
       const ticketPrice = saved.ticketPrice ?? STARTING_TICKET_PRICE;
       set({ ...saved, ticketPrice });
     }

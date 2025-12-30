@@ -2,7 +2,8 @@ import type { BuildingDefinition, BuildingCategory } from '../core/types';
 
 export const BUILDINGS: BuildingDefinition[] = [
   // === RIDES ===
-  // Rides attract guests to your park
+  // prestige: adds to park reputation (attracts guests)
+  // rideCapacity: guests it can handle (prevents overcrowding)
   {
     id: 'carousel',
     name: 'Carousel',
@@ -11,7 +12,8 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 3000,
     maintenanceCost: 2,
-    attraction: 8,
+    prestige: 20,
+    rideCapacity: 30,
     description: 'Classic merry-go-round',
   },
   {
@@ -22,7 +24,8 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 6000,
     maintenanceCost: 3,
-    attraction: 12,
+    prestige: 35,
+    rideCapacity: 25,
     description: 'Crash into friends!',
   },
   {
@@ -33,7 +36,8 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'standard',
     baseCost: 20000,
     maintenanceCost: 8,
-    attraction: 25,
+    prestige: 60,
+    rideCapacity: 50,
     description: 'See the whole park',
   },
   {
@@ -44,7 +48,8 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'standard',
     baseCost: 40000,
     maintenanceCost: 15,
-    attraction: 40,
+    prestige: 100,
+    rideCapacity: 40,
     description: 'Get soaked!',
   },
   {
@@ -55,7 +60,8 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'premium',
     baseCost: 120000,
     maintenanceCost: 40,
-    attraction: 80,
+    prestige: 200,
+    rideCapacity: 60,
     description: 'Ultimate thrill ride',
   },
   {
@@ -66,12 +72,13 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'premium',
     baseCost: 180000,
     maintenanceCost: 55,
-    attraction: 100,
+    prestige: 250,
+    rideCapacity: 45,
     description: 'Free fall from the sky',
   },
 
   // === SHOPS ===
-  // Shops earn money from guests in your park
+  // spendingRate: $ earned per guest per second
   {
     id: 'balloon_stand',
     name: 'Balloon Cart',
@@ -80,7 +87,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 1500,
     maintenanceCost: 1,
-    spendingRate: 0.15,
+    spendingRate: 0.08,
     description: 'Colorful balloons',
   },
   {
@@ -91,7 +98,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 2500,
     maintenanceCost: 1.5,
-    spendingRate: 0.20,
+    spendingRate: 0.12,
     description: 'Famous hot dogs',
   },
   {
@@ -102,7 +109,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 3000,
     maintenanceCost: 2,
-    spendingRate: 0.25,
+    spendingRate: 0.15,
     description: 'Premium ice cream',
   },
   {
@@ -113,7 +120,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 5000,
     maintenanceCost: 3,
-    spendingRate: 0.35,
+    spendingRate: 0.20,
     description: 'Coffee & drinks',
   },
   {
@@ -124,7 +131,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'standard',
     baseCost: 15000,
     maintenanceCost: 8,
-    spendingRate: 0.60,
+    spendingRate: 0.35,
     description: 'Magical souvenirs',
   },
   {
@@ -135,7 +142,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'standard',
     baseCost: 25000,
     maintenanceCost: 12,
-    spendingRate: 0.80,
+    spendingRate: 0.50,
     description: 'Burgers and fries',
   },
   {
@@ -146,7 +153,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'premium',
     baseCost: 60000,
     maintenanceCost: 25,
-    spendingRate: 1.20,
+    spendingRate: 0.80,
     description: 'Games and prizes',
   },
   {
@@ -157,12 +164,12 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'premium',
     baseCost: 100000,
     maintenanceCost: 40,
-    spendingRate: 1.80,
+    spendingRate: 1.20,
     description: 'Just Do It',
   },
 
   // === INFRASTRUCTURE ===
-  // Infrastructure keeps guests happy (coverage)
+  // coverage: how many guests it can support
   {
     id: 'bench',
     name: 'Benches',
@@ -171,7 +178,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 500,
     maintenanceCost: 0.2,
-    coverage: 15,
+    coverage: 20,
     description: 'A place to rest',
   },
   {
@@ -182,7 +189,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 300,
     maintenanceCost: 0.3,
-    coverage: 10,
+    coverage: 15,
     description: 'Keep the park clean',
   },
   {
@@ -193,7 +200,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'basic',
     baseCost: 2000,
     maintenanceCost: 1,
-    coverage: 30,
+    coverage: 40,
     description: 'Essential facilities',
   },
   {
@@ -204,7 +211,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'standard',
     baseCost: 8000,
     maintenanceCost: 4,
-    coverage: 50,
+    coverage: 80,
     description: 'Safety first',
   },
   {
@@ -215,7 +222,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'standard',
     baseCost: 5000,
     maintenanceCost: 2,
-    coverage: 40,
+    coverage: 60,
     description: 'Help & directions',
   },
   {
@@ -226,7 +233,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     tier: 'premium',
     baseCost: 25000,
     maintenanceCost: 10,
-    coverage: 100,
+    coverage: 150,
     description: 'Keep everyone safe',
   },
 ];

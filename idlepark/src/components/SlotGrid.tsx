@@ -38,19 +38,19 @@ export function SlotGrid() {
     const building = getBuildingById(slot.buildingId);
     if (!building) return null;
 
-    const levelMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
+    const lvl = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
 
-    if (building.category === 'ride' && building.attraction) {
-      const value = building.attraction * levelMultiplier;
-      return { text: `+${value.toFixed(0)}/s`, color: 'text-park-accent' };
+    if (building.category === 'ride' && building.prestige) {
+      const prestige = Math.floor(building.prestige * lvl);
+      return { text: `⭐${prestige}`, color: 'text-park-accent' };
     }
     if (building.category === 'shop' && building.spendingRate) {
-      const value = building.spendingRate * levelMultiplier;
-      return { text: `${formatMoney(value)}/g`, color: 'text-park-success' };
+      const rate = building.spendingRate * lvl;
+      return { text: `${formatMoney(rate)}/g`, color: 'text-park-success' };
     }
     if (building.category === 'infrastructure' && building.coverage) {
-      const value = Math.floor(building.coverage * levelMultiplier);
-      return { text: `${value} cap`, color: 'text-park-muted' };
+      const coverage = Math.floor(building.coverage * lvl);
+      return { text: `${coverage} cov`, color: 'text-park-muted' };
     }
     return null;
   };

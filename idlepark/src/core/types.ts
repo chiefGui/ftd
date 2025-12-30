@@ -10,10 +10,13 @@ export type BuildingDefinition = {
   baseCost: number;
   maintenanceCost: number;
   description: string;
-  // Category-specific stats (only one will be set based on category)
-  attraction?: number;    // rides: guests attracted per second
-  spendingRate?: number;  // shops: $ earned per guest per second
-  coverage?: number;      // infrastructure: # of guests it can serve
+  // Ride stats
+  prestige?: number;      // How desirable/exciting (adds to park reputation)
+  rideCapacity?: number;  // Guests it can handle per minute (affects queues)
+  // Shop stats
+  spendingRate?: number;  // $ earned per guest per second
+  // Infrastructure stats
+  coverage?: number;      // # of guests it can support
 };
 
 export type Slot = {
@@ -24,18 +27,29 @@ export type Slot = {
 };
 
 export type ParkStats = {
-  guestCapacity: number;      // max guests (from slots)
-  totalAttraction: number;    // guest attraction rate (from rides)
-  totalSpendingRate: number;  // $ per guest per second (from shops)
-  totalCoverage: number;      // infrastructure coverage
-  satisfaction: number;       // 0-1 based on coverage vs guests
-  demandMultiplier: number;   // based on ticket price
-  potentialGuests: number;    // attraction * demand
-  actualGuests: number;       // min(potential, capacity)
-  ticketIncome: number;       // guests * ticket price per second
-  shopIncome: number;         // guests * spending rate
-  totalMaintenance: number;   // sum of all maintenance
-  netIncome: number;          // total income - maintenance
+  // Capacity
+  maxGuests: number;          // From unlocked slots
+  rideCapacity: number;       // How many guests rides can handle
+  infrastructureCoverage: number;
+
+  // Reputation & Demand
+  reputation: number;         // Sum of ride prestige
+  demandMultiplier: number;   // Based on ticket price (0-1)
+  targetGuests: number;       // reputation * demand
+
+  // Guest counts
+  currentGuests: number;
+
+  // Satisfaction breakdown (each 0-1, combined into overall)
+  rideSatisfaction: number;   // Are rides overcrowded?
+  facilitySatisfaction: number; // Enough restrooms, etc?
+  overallSatisfaction: number;  // Combined
+
+  // Income
+  ticketIncome: number;       // From guests arriving
+  shopIncome: number;         // From guests in park
+  totalMaintenance: number;
+  netIncome: number;
 };
 
 export type GameState = {
@@ -51,26 +65,20 @@ export type GameState = {
 };
 
 export type GameStore = GameState & {
-  // Core actions
   tick: (deltaSeconds: number) => void;
 
-  // Building actions
   buildInSlot: (slotIndex: number, buildingId: string) => boolean;
   upgradeSlot: (slotId: string) => boolean;
   demolishSlot: (slotId: string) => number;
 
-  // Slot actions
   unlockNextSlot: () => boolean;
   getSlotUnlockCost: () => number;
 
-  // Ticket price
   setTicketPrice: (price: number) => void;
 
-  // Calculations
   calculateParkStats: () => ParkStats;
   calculateUpgradeCost: (slotId: string) => number;
 
-  // Persistence
   applyOfflineProgress: () => number;
   resetGame: () => void;
   save: () => void;

@@ -25,30 +25,31 @@ export function SlotDetail({ slot, onClose }: Props) {
   const upgradeCost = calculateUpgradeCost(slot.id);
   const canUpgrade = money >= upgradeCost;
 
-  // Calculate current stats with level
   const levelMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
   const maintenanceMultiplier = Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, slot.level - 1);
   const currentMaintenance = building.maintenanceCost * maintenanceMultiplier;
 
-  const getMainStat = () => {
-    if (building.category === 'ride' && building.attraction) {
-      const value = building.attraction * levelMultiplier;
-      return { label: 'Attracts', value: `+${value.toFixed(1)} guests/s`, color: 'text-park-accent' };
+  const getStats = () => {
+    if (building.category === 'ride') {
+      return [
+        { label: 'Prestige', value: `⭐ ${Math.floor((building.prestige ?? 0) * levelMultiplier)}` },
+        { label: 'Capacity', value: `${Math.floor((building.rideCapacity ?? 0) * levelMultiplier)} guests` },
+      ];
     }
-    if (building.category === 'shop' && building.spendingRate) {
-      const value = building.spendingRate * levelMultiplier;
-      return { label: 'Earns', value: `${formatMoney(value)}/guest/s`, color: 'text-park-success' };
+    if (building.category === 'shop') {
+      const rate = (building.spendingRate ?? 0) * levelMultiplier;
+      return [
+        { label: 'Earns', value: `${formatMoney(rate)}/guest/s` },
+      ];
     }
-    if (building.category === 'infrastructure' && building.coverage) {
-      const value = Math.floor(building.coverage * levelMultiplier);
-      return { label: 'Covers', value: `${value} guests`, color: 'text-park-accent' };
+    if (building.category === 'infrastructure') {
+      return [
+        { label: 'Coverage', value: `${Math.floor((building.coverage ?? 0) * levelMultiplier)} guests` },
+      ];
     }
-    return null;
+    return [];
   };
 
-  const mainStat = getMainStat();
-
-  // Estimate refund
   const estimatedRefund = Math.floor(building.baseCost * (1 + (slot.level - 1) * 0.5) * DEMOLISH_REFUND_RATE);
 
   const handleUpgrade = () => {
@@ -85,7 +86,6 @@ export function SlotDetail({ slot, onClose }: Props) {
         <div className="p-4 border-b border-park-muted/30">
           <div className="w-12 h-1 bg-park-muted/50 rounded-full mx-auto mb-4" />
 
-          {/* Header */}
           <div className="flex items-center gap-4">
             <motion.span
               animate={{ rotate: [0, 5, -5, 0] }}
@@ -102,21 +102,19 @@ export function SlotDetail({ slot, onClose }: Props) {
         </div>
 
         <div className="p-4 space-y-4 pb-8">
-          {/* Stats breakdown */}
           <div className="bg-park-bg rounded-xl p-4 space-y-3">
-            {mainStat && (
-              <div className="flex justify-between items-center">
-                <span className="text-park-muted">{mainStat.label}</span>
-                <span className={`font-semibold ${mainStat.color}`}>{mainStat.value}</span>
+            {getStats().map((stat, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <span className="text-park-muted">{stat.label}</span>
+                <span className="font-semibold text-park-accent">{stat.value}</span>
               </div>
-            )}
+            ))}
             <div className="flex justify-between items-center">
               <span className="text-park-muted">Upkeep</span>
               <span className="text-park-danger font-medium">-{formatMoney(currentMaintenance)}/s</span>
             </div>
           </div>
 
-          {/* Upgrade button */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleUpgrade}
@@ -130,7 +128,6 @@ export function SlotDetail({ slot, onClose }: Props) {
             Upgrade to Lv.{slot.level + 1} • {formatMoney(upgradeCost)}
           </motion.button>
 
-          {/* Demolish button */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleDemolish}
@@ -146,7 +143,6 @@ export function SlotDetail({ slot, onClose }: Props) {
             }
           </motion.button>
 
-          {/* Close button */}
           <button
             onClick={onClose}
             className="w-full py-3 text-park-muted"
