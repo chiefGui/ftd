@@ -7,6 +7,7 @@ export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const totalEarnings = useGameStore((s) => s.totalEarnings);
+  const gameStartedAt = useGameStore((s) => s.gameStartedAt);
   const resetGame = useGameStore((s) => s.resetGame);
 
   const handleReset = () => {
@@ -19,13 +20,24 @@ export function SettingsMenu() {
     }
   };
 
+  const formatPlayTime = () => {
+    const seconds = Math.floor((Date.now() - gameStartedAt) / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+    return `${Math.floor(seconds / 86400)}d`;
+  };
+
   return (
     <>
+      {/* Hamburger button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="absolute top-3 right-4 text-2xl opacity-60 hover:opacity-100 transition-opacity"
+        className="p-2 -mr-2 flex flex-col gap-1 opacity-70 active:opacity-100"
       >
-        ⚙️
+        <span className="w-5 h-0.5 bg-park-text rounded-full" />
+        <span className="w-5 h-0.5 bg-park-text rounded-full" />
+        <span className="w-5 h-0.5 bg-park-text rounded-full" />
       </button>
 
       <AnimatePresence>
@@ -39,25 +51,38 @@ export function SettingsMenu() {
               className="fixed inset-0 bg-black/60 z-40"
             />
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 bg-park-card rounded-t-3xl z-50"
+              className="fixed top-0 right-0 bottom-0 w-72 bg-park-card z-50 shadow-2xl"
             >
-              <div className="p-4 border-b border-park-muted/30">
-                <div className="w-12 h-1 bg-park-muted/50 rounded-full mx-auto mb-3" />
-                <h2 className="text-xl font-bold text-center">Settings</h2>
+              {/* Header */}
+              <div className="p-4 border-b border-park-muted/30 flex items-center justify-between">
+                <h2 className="text-lg font-bold">Menu</h2>
+                <button
+                  onClick={() => { setIsOpen(false); setConfirmReset(false); }}
+                  className="text-2xl text-park-muted"
+                >
+                  ✕
+                </button>
               </div>
 
-              <div className="p-4 space-y-4 pb-8">
-                <div className="bg-park-bg rounded-xl p-4">
-                  <div className="text-sm text-park-muted mb-1">Total Lifetime Earnings</div>
-                  <div className="text-xl font-bold text-park-success">{formatMoney(totalEarnings)}</div>
+              <div className="p-4 space-y-4">
+                {/* Stats */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-park-muted">Play time</span>
+                    <span className="font-medium">{formatPlayTime()}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-park-muted">Total earned</span>
+                    <span className="font-medium text-park-success">{formatMoney(totalEarnings)}</span>
+                  </div>
                 </div>
 
-                <div className="bg-park-bg rounded-xl p-4">
-                  <div className="text-sm text-park-muted mb-3">Danger Zone</div>
+                <div className="border-t border-park-muted/30 pt-4">
+                  <div className="text-xs text-park-muted uppercase tracking-wide mb-3">Danger Zone</div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleReset}
@@ -75,13 +100,13 @@ export function SettingsMenu() {
                     </p>
                   )}
                 </div>
+              </div>
 
-                <button
-                  onClick={() => { setIsOpen(false); setConfirmReset(false); }}
-                  className="w-full py-3 text-park-muted"
-                >
-                  Close
-                </button>
+              {/* Footer */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-park-muted/30">
+                <p className="text-xs text-park-muted text-center">
+                  Idlepark v0.1
+                </p>
               </div>
             </motion.div>
           </>
