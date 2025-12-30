@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
+import { useMilestoneStore } from '../store/milestoneStore';
 import { getBuildingById } from '../data/buildings';
+import { MILESTONES } from '../data/milestones';
 import { formatMoney } from '../utils/formatters';
 import { STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER } from '../data/constants';
 import type { Slot } from '../core/types';
@@ -10,7 +12,7 @@ type Props = {
   onClose: () => void;
 };
 
-type Tab = 'overview' | 'buildings' | 'income' | 'insights';
+type Tab = 'overview' | 'buildings' | 'income' | 'insights' | 'milestones';
 
 // Calculate per-building stats
 function getBuildingStats(slot: Slot, currentGuests: number) {
@@ -233,6 +235,9 @@ export function StatsDashboard({ onClose }: Props) {
   const guests = useGameStore((s) => s.guests);
   const calculateParkStats = useGameStore((s) => s.calculateParkStats);
 
+  const completedMilestones = useMilestoneStore((s) => s.completedMilestones);
+  const peakGuests = useMilestoneStore((s) => s.peakGuests);
+
   const stats = calculateParkStats();
 
   // Calculate all building stats using actual guest count
@@ -394,6 +399,7 @@ export function StatsDashboard({ onClose }: Props) {
     { id: 'overview', label: 'Overview', emoji: '📊' },
     { id: 'buildings', label: 'Buildings', emoji: '🏗️' },
     { id: 'income', label: 'Income', emoji: '💰' },
+    { id: 'milestones', label: 'Milestones', emoji: '🏆' },
     { id: 'insights', label: 'Insights', emoji: '💡' },
   ];
 
@@ -710,6 +716,106 @@ export function StatsDashboard({ onClose }: Props) {
                       </div>
                     </div>
                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'milestones' && (
+              <motion.div
+                key="milestones"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-4"
+              >
+                {/* Peak Guests Progress */}
+                <div className="bg-park-bg rounded-xl p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <span>👥</span> Peak Guests Record
+                  </h3>
+                  <div className="text-3xl font-bold text-park-accent mb-1">
+                    {Math.floor(peakGuests)}
+                  </div>
+                  <div className="text-sm text-park-muted">
+                    highest guests at once
+                  </div>
+                </div>
+
+                {/* Milestone List */}
+                <div className="bg-park-bg rounded-xl p-4">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <span>🏆</span> Milestones
+                  </h3>
+                  <div className="space-y-3">
+                    {MILESTONES.map((milestone) => {
+                      const isCompleted = completedMilestones.includes(milestone.id);
+                      const progress = milestone.requirement.type === 'peakGuests'
+                        ? Math.min(100, (peakGuests / milestone.requirement.amount) * 100)
+                        : 0;
+
+                      return (
+                        <motion.div
+                          key={milestone.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`rounded-xl p-4 border ${
+                            isCompleted
+                              ? 'bg-yellow-500/10 border-yellow-500/30'
+                              : 'bg-park-card border-park-muted/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`text-3xl ${isCompleted ? '' : 'grayscale opacity-50'}`}>
+                              {milestone.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-semibold ${isCompleted ? 'text-yellow-400' : ''}`}>
+                                  {milestone.name}
+                                </span>
+                                {isCompleted && <span className="text-yellow-400">✓</span>}
+                              </div>
+                              <p className="text-sm text-park-muted mt-0.5">
+                                {milestone.description}
+                              </p>
+
+                              {/* Progress bar for incomplete milestones */}
+                              {!isCompleted && (
+                                <div className="mt-2">
+                                  <div className="flex justify-between text-xs text-park-muted mb-1">
+                                    <span>{Math.floor(peakGuests)} / {milestone.requirement.amount}</span>
+                                    <span>{Math.floor(progress)}%</span>
+                                  </div>
+                                  <div className="h-2 bg-park-muted/20 rounded-full overflow-hidden">
+                                    <motion.div
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${progress}%` }}
+                                      transition={{ duration: 0.5 }}
+                                      className="h-full rounded-full bg-park-accent"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Reward display */}
+                              <div className={`text-sm mt-2 ${isCompleted ? 'text-yellow-400' : 'text-park-muted'}`}>
+                                {isCompleted ? '✨ Collected: ' : '🎁 Reward: '}
+                                {milestone.reward.type === 'money' && formatMoney(milestone.reward.amount)}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Completion Summary */}
+                <div className="bg-park-bg rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {completedMilestones.length} / {MILESTONES.length}
+                  </div>
+                  <div className="text-sm text-park-muted">milestones completed</div>
                 </div>
               </motion.div>
             )}
