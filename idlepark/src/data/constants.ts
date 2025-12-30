@@ -40,6 +40,19 @@ export const SLOT_UNLOCK_COSTS = [
   130000,  // Slot 10
   180000,  // Slot 11
   250000,  // Slot 12
+  // Expansion slots (require Park Expansion perk)
+  350000,  // Slot 13
+  500000,  // Slot 14
+  700000,  // Slot 15
+  950000,  // Slot 16
+  1250000, // Slot 17
+  1600000, // Slot 18
+  2000000, // Slot 19
+  2500000, // Slot 20
+  3100000, // Slot 21
+  3800000, // Slot 22
+  4600000, // Slot 23
+  5500000, // Slot 24
 ];
 
 // === UPGRADE SCALING ===
