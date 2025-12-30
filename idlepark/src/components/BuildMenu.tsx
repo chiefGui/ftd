@@ -3,20 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ATTRACTIONS } from '../data/attractions';
 import { useGameStore } from '../store/gameStore';
 import { formatMoney, formatMoneyPerSec } from '../utils/formatters';
+import type { AttractionCategory } from '../core/types';
+
+const CATEGORIES: { id: AttractionCategory; label: string; emoji: string }[] = [
+  { id: 'ride', label: 'Rides', emoji: '🎢' },
+  { id: 'food', label: 'Food', emoji: '🍕' },
+  { id: 'shop', label: 'Shops', emoji: '🎁' },
+];
 
 export function BuildMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<AttractionCategory>('ride');
   const money = useGameStore((s) => s.money);
   const attractions = useGameStore((s) => s.attractions);
   const buyAttraction = useGameStore((s) => s.buyAttraction);
 
   const handleBuy = (id: string) => {
     if (buyAttraction(id)) {
-      setIsOpen(false);
+      // Don't close - let them keep shopping
     }
   };
 
   const ownedIds = new Set(attractions.map((a) => a.id));
+  const filteredAttractions = ATTRACTIONS.filter((a) => a.category === activeCategory);
 
   return (
     <>
@@ -44,17 +53,36 @@ export function BuildMenu() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 bg-park-card rounded-t-3xl z-50 max-h-[80vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 bg-park-card rounded-t-3xl z-50 max-h-[80vh] overflow-hidden flex flex-col"
             >
-              <div className="sticky top-0 bg-park-card p-4 border-b border-park-muted/30">
+              <div className="p-4 border-b border-park-muted/30">
                 <div className="w-12 h-1 bg-park-muted/50 rounded-full mx-auto mb-3" />
-                <h2 className="text-xl font-bold text-center">Build Attraction</h2>
+                <h2 className="text-xl font-bold text-center mb-4">Build</h2>
+
+                {/* Category tabs */}
+                <div className="flex gap-2">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        activeCategory === cat.id
+                          ? 'bg-park-accent text-white'
+                          : 'bg-park-bg text-park-muted'
+                      }`}
+                    >
+                      <span className="mr-1">{cat.emoji}</span>
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="p-4 space-y-3 pb-8">
-                {ATTRACTIONS.map((def) => {
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-8">
+                {filteredAttractions.map((def) => {
                   const owned = ownedIds.has(def.id);
                   const canAfford = money >= def.baseCost;
+                  const netIncome = def.baseIncome - def.maintenanceCost;
 
                   return (
                     <motion.button
@@ -77,8 +105,9 @@ export function BuildMenu() {
                       <div className="flex-1">
                         <div className="font-semibold">{def.name}</div>
                         <div className="text-sm text-park-muted">{def.description}</div>
-                        <div className="text-sm text-park-success mt-1">
-                          {formatMoneyPerSec(def.baseIncome)}
+                        <div className="flex gap-3 mt-1 text-xs">
+                          <span className="text-park-success">{formatMoneyPerSec(netIncome)}</span>
+                          <span className="text-park-muted">-{formatMoney(def.maintenanceCost)}/s upkeep</span>
                         </div>
                       </div>
                       <div className="text-right">

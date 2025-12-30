@@ -1,12 +1,15 @@
 export type AttractionTier = 'basic' | 'standard' | 'premium';
+export type AttractionCategory = 'ride' | 'food' | 'shop';
 
 export interface AttractionDefinition {
   id: string;
   name: string;
   emoji: string;
+  category: AttractionCategory;
   tier: AttractionTier;
   baseCost: number;
   baseIncome: number; // per second at level 1
+  maintenanceCost: number; // fixed cost per second (can cause bankruptcy!)
   capacity: number;
   description: string;
 }

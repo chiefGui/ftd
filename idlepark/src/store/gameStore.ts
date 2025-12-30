@@ -7,7 +7,7 @@ import {
   INCOME_LEVEL_MULTIPLIER,
   BASE_GUEST_RATE,
   GUEST_PER_CAPACITY,
-  MAINTENANCE_RATE,
+  MAINTENANCE_LEVEL_MULTIPLIER,
 } from '../data/constants';
 import { saveGame, loadGame, clearSave } from './db';
 
@@ -57,23 +57,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   calculateIncome: () => {
     const state = get();
-    let income = 0;
+    let grossIncome = 0;
+    let maintenanceCost = 0;
 
     for (const attraction of state.attractions) {
-      income += state.calculateAttractionIncome(attraction);
+      const def = getAttractionById(attraction.id);
+      if (!def) continue;
+
+      // Income scales with level
+      grossIncome += def.baseIncome * Math.pow(INCOME_LEVEL_MULTIPLIER, attraction.level - 1);
+
+      // Fixed maintenance cost per attraction (scales slightly with level)
+      maintenanceCost += def.maintenanceCost * Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, attraction.level - 1);
     }
 
-    // Maintenance costs (10% of gross income)
-    const maintenance = income * MAINTENANCE_RATE;
-    return income - maintenance;
+    // Net income can be NEGATIVE if maintenance > income (bankruptcy risk!)
+    return grossIncome - maintenanceCost;
   },
 
   calculateAttractionIncome: (attraction: OwnedAttraction) => {
     const def = getAttractionById(attraction.id);
     if (!def) return 0;
 
-    // Income scales with level
-    return def.baseIncome * Math.pow(INCOME_LEVEL_MULTIPLIER, attraction.level - 1);
+    const grossIncome = def.baseIncome * Math.pow(INCOME_LEVEL_MULTIPLIER, attraction.level - 1);
+    const maintenance = def.maintenanceCost * Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, attraction.level - 1);
+    return grossIncome - maintenance;
   },
 
   calculateUpgradeCost: (id: string) => {

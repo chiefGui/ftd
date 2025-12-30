@@ -13,8 +13,8 @@ export const BASE_GUEST_RATE = 0.5;
 // Each attraction adds this many guests per second per capacity point
 export const GUEST_PER_CAPACITY = 0.1;
 
-// Maintenance cost per attraction per second (percentage of income)
-export const MAINTENANCE_RATE = 0.1;
+// Maintenance cost multiplier per level (1.05 = 5% more per level)
+export const MAINTENANCE_LEVEL_MULTIPLIER = 1.05;
 
 // Save key for IndexedDB
 export const SAVE_KEY = 'idlepark_save';
