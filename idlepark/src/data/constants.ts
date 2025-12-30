@@ -43,6 +43,7 @@ export const SLOT_UNLOCK_COSTS = [
 ];
 
 // === UPGRADE SCALING ===
+export const MAX_BUILDING_LEVEL = 3;                  // Max upgrades per building (★★★)
 export const UPGRADE_COST_MULTIPLIER = 1.15;
 export const STAT_LEVEL_MULTIPLIER = 1.12;        // 12% more prestige/capacity/coverage per level
 export const MAINTENANCE_LEVEL_MULTIPLIER = 1.05; // 5% more upkeep per level

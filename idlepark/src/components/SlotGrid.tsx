@@ -67,14 +67,19 @@ export function SlotGrid() {
           if (slot) {
             const building = getBuildingById(slot.buildingId);
             const statLine = getSlotStatLine(slot);
+            const levelStars = '★'.repeat(slot.level);
 
             return (
               <motion.button
                 key={index}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleSlotClick(index)}
-                className="aspect-square bg-park-card rounded-2xl p-3 flex flex-col items-center justify-center border-2 border-park-muted/20 active:border-park-accent"
+                className="aspect-square bg-park-card rounded-2xl p-3 flex flex-col items-center justify-center border-2 border-park-muted/20 active:border-park-accent relative"
               >
+                {/* Level stars badge */}
+                <div className="absolute top-1.5 right-1.5 text-[10px] text-yellow-400">
+                  {levelStars}
+                </div>
                 <motion.span
                   animate={{ rotate: [0, 3, -3, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
@@ -82,8 +87,8 @@ export function SlotGrid() {
                 >
                   {building?.emoji}
                 </motion.span>
-                <span className="text-xs text-park-muted truncate w-full text-center">
-                  Lv.{slot.level}
+                <span className="text-[10px] text-park-muted truncate w-full text-center">
+                  {building?.name}
                 </span>
                 {statLine && (
                   <span className={`text-xs font-medium ${statLine.color}`}>

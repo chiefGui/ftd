@@ -42,12 +42,12 @@ export function calculateParkStats(inputs: ParkInputs): ParkStats {
     totalMaintenance += def.maintenanceCost * maintenanceMultiplier;
 
     if (def.category === 'ride') {
-      reputation += (def.prestige ?? 0) * levelMultiplier;
-      rideCapacity += (def.rideCapacity ?? 0) * levelMultiplier;
+      reputation += Math.floor((def.prestige ?? 0) * levelMultiplier);
+      rideCapacity += Math.floor((def.rideCapacity ?? 0) * levelMultiplier);
     } else if (def.category === 'shop') {
       totalSpendingRate += (def.spendingRate ?? 0) * levelMultiplier;
     } else if (def.category === 'infrastructure') {
-      infrastructureCoverage += (def.coverage ?? 0) * levelMultiplier;
+      infrastructureCoverage += Math.floor((def.coverage ?? 0) * levelMultiplier);
     }
   }
 
@@ -75,11 +75,11 @@ export function calculateParkStats(inputs: ParkInputs): ParkStats {
 
   return {
     maxGuests,
-    rideCapacity,
-    infrastructureCoverage,
-    reputation,
+    rideCapacity: Math.floor(rideCapacity),
+    infrastructureCoverage: Math.floor(infrastructureCoverage),
+    reputation: Math.floor(reputation),
     demandMultiplier,
-    targetGuests,
+    targetGuests: Math.floor(targetGuests),
     currentGuests,
     rideSatisfaction,
     facilitySatisfaction,

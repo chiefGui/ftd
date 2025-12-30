@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Slot } from '../core/types';
 import { useGameStore } from '../store/gameStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { getBuildingById } from '../data/buildings';
 import { formatMoney } from '../utils/formatters';
-import { DEMOLISH_REFUND_RATE, STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER } from '../data/constants';
+import { DEMOLISH_REFUND_RATE, STAT_LEVEL_MULTIPLIER, MAINTENANCE_LEVEL_MULTIPLIER, MAX_BUILDING_LEVEL } from '../data/constants';
+import { randomGuestProfile } from '../data/guestMessages';
 
 type Props = {
   slot: Slot;
@@ -13,48 +15,97 @@ type Props = {
 
 export function SlotDetail({ slot, onClose }: Props) {
   const [confirmDemolish, setConfirmDemolish] = useState(false);
+  const [justUpgraded, setJustUpgraded] = useState(false);
 
   const money = useGameStore((s) => s.money);
   const upgradeSlot = useGameStore((s) => s.upgradeSlot);
   const demolishSlot = useGameStore((s) => s.demolishSlot);
   const calculateUpgradeCost = useGameStore((s) => s.calculateUpgradeCost);
+  const addNotification = useNotificationStore((s) => s.addNotification);
 
   const building = getBuildingById(slot.buildingId);
   if (!building) return null;
 
+  const isMaxLevel = slot.level >= MAX_BUILDING_LEVEL;
   const upgradeCost = calculateUpgradeCost(slot.id);
-  const canUpgrade = money >= upgradeCost;
+  const canUpgrade = !isMaxLevel && money >= upgradeCost;
 
-  const levelMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
+  const currentMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level - 1);
+  const nextMultiplier = Math.pow(STAT_LEVEL_MULTIPLIER, slot.level);
   const maintenanceMultiplier = Math.pow(MAINTENANCE_LEVEL_MULTIPLIER, slot.level - 1);
   const currentMaintenance = building.maintenanceCost * maintenanceMultiplier;
 
-  const getStats = () => {
+  // Calculate current and next level stats
+  const getStatsComparison = () => {
     if (building.category === 'ride') {
-      return [
-        { label: 'Prestige', value: `⭐ ${Math.floor((building.prestige ?? 0) * levelMultiplier)}` },
-        { label: 'Capacity', value: `${Math.floor((building.rideCapacity ?? 0) * levelMultiplier)} guests` },
-      ];
+      const currentPrestige = Math.floor((building.prestige ?? 0) * currentMultiplier);
+      const nextPrestige = Math.floor((building.prestige ?? 0) * nextMultiplier);
+      const currentCap = Math.floor((building.rideCapacity ?? 0) * currentMultiplier);
+      const nextCap = Math.floor((building.rideCapacity ?? 0) * nextMultiplier);
+      return {
+        current: [
+          { label: 'Attracts', value: currentPrestige, unit: ' guests' },
+          { label: 'Fits', value: currentCap, unit: ' at once' },
+        ],
+        gains: [
+          { label: 'Attracts', gain: nextPrestige - currentPrestige, isMoney: false },
+          { label: 'Fits', gain: nextCap - currentCap, isMoney: false },
+        ],
+      };
     }
     if (building.category === 'shop') {
-      const rate = (building.spendingRate ?? 0) * levelMultiplier;
-      return [
-        { label: 'Earns', value: `${formatMoney(rate)}/guest/s` },
-      ];
+      const currentRate = (building.spendingRate ?? 0) * currentMultiplier;
+      const nextRate = (building.spendingRate ?? 0) * nextMultiplier;
+      return {
+        current: [
+          { label: 'Earns', value: formatMoney(currentRate), unit: '/guest' },
+        ],
+        gains: [
+          { label: 'Earns', gain: nextRate - currentRate, isMoney: true },
+        ],
+      };
     }
     if (building.category === 'infrastructure') {
-      return [
-        { label: 'Coverage', value: `${Math.floor((building.coverage ?? 0) * levelMultiplier)} guests` },
-      ];
+      const currentCov = Math.floor((building.coverage ?? 0) * currentMultiplier);
+      const nextCov = Math.floor((building.coverage ?? 0) * nextMultiplier);
+      return {
+        current: [
+          { label: 'Keeps happy', value: currentCov, unit: ' guests' },
+        ],
+        gains: [
+          { label: 'Keeps happy', gain: nextCov - currentCov, isMoney: false },
+        ],
+      };
     }
-    return [];
+    return { current: [], gains: [] };
   };
 
+  const stats = getStatsComparison();
   const estimatedRefund = Math.floor(building.baseCost * (1 + (slot.level - 1) * 0.5) * DEMOLISH_REFUND_RATE);
+  const levelStars = '★'.repeat(Math.min(slot.level, 5)) + (slot.level > 5 ? '+' : '');
 
   const handleUpgrade = () => {
     if (canUpgrade) {
       upgradeSlot(slot.id);
+      setJustUpgraded(true);
+
+      // Send celebration notification
+      const messages = [
+        `the ${building.name} got an upgrade, nice!`,
+        `they improved the ${building.name}!`,
+        `${building.name} looking even better now`,
+        `love that they're investing in the ${building.name}`,
+      ];
+      const guest = randomGuestProfile();
+      addNotification({
+        name: guest.name,
+        visitorId: guest.visitorId,
+        emoji: '⬆️',
+        text: messages[Math.floor(Math.random() * messages.length)],
+        type: 'positive',
+      });
+
+      setTimeout(() => setJustUpgraded(false), 1500);
     }
   };
 
@@ -88,45 +139,80 @@ export function SlotDetail({ slot, onClose }: Props) {
 
           <div className="flex items-center gap-4">
             <motion.span
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              animate={justUpgraded ? { scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] } : { rotate: [0, 5, -5, 0] }}
+              transition={{ duration: justUpgraded ? 0.5 : 2, repeat: justUpgraded ? 0 : Infinity }}
               className="text-5xl"
             >
               {building.emoji}
             </motion.span>
             <div className="flex-1">
               <h2 className="text-xl font-bold">{building.name}</h2>
-              <p className="text-sm text-park-muted">Level {slot.level}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 text-sm">{levelStars}</span>
+                <span className="text-sm text-park-muted">Level {slot.level}</span>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="p-4 space-y-4 pb-8">
-          <div className="bg-park-bg rounded-xl p-4 space-y-3">
-            {getStats().map((stat, i) => (
+          {/* Current Stats */}
+          <div className="bg-park-bg rounded-xl p-4 space-y-2">
+            {stats.current.map((stat, i) => (
               <div key={i} className="flex justify-between items-center">
-                <span className="text-park-muted">{stat.label}</span>
-                <span className="font-semibold text-park-accent">{stat.value}</span>
+                <span className="text-park-muted text-sm">{stat.label}</span>
+                <span className="font-semibold text-park-accent">
+                  {typeof stat.value === 'number' ? stat.value : stat.value}{stat.unit}
+                </span>
               </div>
             ))}
-            <div className="flex justify-between items-center">
-              <span className="text-park-muted">Upkeep</span>
+            <div className="flex justify-between items-center pt-2 border-t border-park-muted/20">
+              <span className="text-park-muted text-sm">Running cost</span>
               <span className="text-park-danger font-medium">-{formatMoney(currentMaintenance)}/s</span>
             </div>
           </div>
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleUpgrade}
-            disabled={!canUpgrade}
-            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors ${
-              canUpgrade
-                ? 'bg-park-accent text-white'
-                : 'bg-park-muted/30 text-park-muted'
-            }`}
-          >
-            Upgrade to Lv.{slot.level + 1} • {formatMoney(upgradeCost)}
-          </motion.button>
+          {/* Upgrade Button or MAX badge */}
+          {isMaxLevel ? (
+            <div className="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/50 text-center">
+              <span className="text-yellow-400 font-bold text-lg">★★★ MAX LEVEL</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleUpgrade}
+                disabled={!canUpgrade}
+                className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors relative overflow-hidden ${
+                  canUpgrade
+                    ? 'bg-park-accent text-white'
+                    : 'bg-park-muted/30 text-park-muted'
+                }`}
+              >
+                {justUpgraded ? (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                  >
+                    ✨ Upgraded!
+                  </motion.span>
+                ) : (
+                  <>⬆️ Upgrade • {formatMoney(upgradeCost)}</>
+                )}
+              </motion.button>
+
+              {/* What you'll get */}
+              {canUpgrade && !justUpgraded && (
+                <div className="flex justify-center gap-4 text-xs">
+                  {stats.gains.map((g, i) => (
+                    <span key={i} className="text-park-success">
+                      +{g.isMoney ? formatMoney(g.gain) : g.gain} {g.label.toLowerCase()}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <motion.button
             whileTap={{ scale: 0.95 }}

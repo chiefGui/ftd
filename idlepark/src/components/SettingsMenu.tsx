@@ -4,10 +4,12 @@ import { useGameStore } from '../store/gameStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { formatMoney } from '../utils/formatters';
 import { getAvatarUrl } from '../data/guestMessages';
+import { StatsDashboard } from './StatsDashboard';
 
 export function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const totalEarnings = useGameStore((s) => s.totalEarnings);
   const gameStartedAt = useGameStore((s) => s.gameStartedAt);
   const resetGame = useGameStore((s) => s.resetGame);
@@ -91,6 +93,25 @@ export function SettingsMenu() {
 
               {/* Scrollable content */}
               <div className="flex-1 overflow-y-auto">
+                {/* Stats Dashboard Button */}
+                <div className="p-4 border-b border-park-muted/30">
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowStats(true);
+                    }}
+                    className="w-full flex items-center gap-3 bg-gradient-to-r from-park-accent/20 to-park-success/20 hover:from-park-accent/30 hover:to-park-success/30 border border-park-accent/30 rounded-xl p-4 transition-colors"
+                  >
+                    <span className="text-2xl">📊</span>
+                    <div className="text-left">
+                      <div className="font-semibold">Park Analytics</div>
+                      <div className="text-xs text-park-muted">View detailed stats & insights</div>
+                    </div>
+                    <span className="ml-auto text-park-muted">→</span>
+                  </motion.button>
+                </div>
+
                 {/* Guest Feed */}
                 <div className="p-4 border-b border-park-muted/30">
                   <div className="flex items-center gap-2 mb-4">
@@ -203,6 +224,13 @@ export function SettingsMenu() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Stats Dashboard Modal */}
+      <AnimatePresence>
+        {showStats && (
+          <StatsDashboard onClose={() => setShowStats(false)} />
         )}
       </AnimatePresence>
     </>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-import { formatMoney } from '../utils/formatters';
+import { formatMoney, formatNumber } from '../utils/formatters';
 import { SettingsMenu } from './SettingsMenu';
 import { TicketControl } from './TicketControl';
 import { StatsPanel } from './StatsPanel';
@@ -44,11 +44,11 @@ export function Header() {
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
               <span>⭐</span>
-              <span className="font-medium">{stats.reputation}</span>
+              <span className="font-medium">{formatNumber(stats.reputation)}</span>
             </span>
             <span className="flex items-center gap-1">
               <span>👥</span>
-              <span className="font-medium">{Math.floor(guests)}/{stats.maxGuests}</span>
+              <span className="font-medium">{formatNumber(Math.floor(guests))}/{formatNumber(stats.maxGuests)}</span>
             </span>
             <span className="flex items-center gap-1">
               <span>{getSatisfactionEmoji()}</span>
