@@ -49,7 +49,9 @@ function getBuildingStats(slot: Slot, currentGuests: number) {
     totalInvested,
     prestige: def.category === 'ride' ? Math.floor((def.prestige ?? 0) * levelMultiplier) : 0,
     capacity: def.category === 'ride' ? Math.floor((def.rideCapacity ?? 0) * levelMultiplier) : 0,
-    coverage: def.category === 'infrastructure' ? Math.floor((def.coverage ?? 0) * levelMultiplier) : 0,
+    hungerCapacity: def.category === 'shop' ? Math.floor((def.hungerCapacity ?? 0) * levelMultiplier) : 0,
+    comfortCapacity: def.category === 'infrastructure' ? Math.floor((def.comfortCapacity ?? 0) * levelMultiplier) : 0,
+    safetyCapacity: def.category === 'infrastructure' ? Math.floor((def.safetyCapacity ?? 0) * levelMultiplier) : 0,
   };
 }
 
@@ -332,22 +334,42 @@ export function StatsDashboard({ onClose }: Props) {
       });
     }
 
-    // Ride capacity warning
-    if (stats.rideSatisfaction < 0.6 && stats.currentGuests > 10) {
+    // Entertainment capacity warning
+    if (stats.entertainmentSatisfaction < 0.6 && stats.currentGuests > 10) {
       result.push({
         emoji: '🎢',
         title: 'Rides are overcrowded',
-        description: `Only ${Math.round(stats.rideSatisfaction * 100)}% capacity for ${Math.floor(stats.currentGuests)} guests`,
+        description: `Only ${Math.round(stats.entertainmentSatisfaction * 100)}% capacity for ${Math.floor(stats.currentGuests)} guests`,
         type: 'warning',
       });
     }
 
-    // Facility coverage warning
-    if (stats.facilitySatisfaction < 0.6 && stats.currentGuests > 10) {
+    // Hunger satisfaction warning
+    if (stats.hungerSatisfaction < 0.6 && stats.currentGuests > 10) {
+      result.push({
+        emoji: '🍔',
+        title: 'Guests are hungry',
+        description: `Only ${Math.round(stats.hungerSatisfaction * 100)}% of guests can find food`,
+        type: 'warning',
+      });
+    }
+
+    // Comfort satisfaction warning
+    if (stats.comfortSatisfaction < 0.6 && stats.currentGuests > 10) {
       result.push({
         emoji: '🚻',
-        title: 'Not enough facilities',
-        description: `Guests need more restrooms and amenities`,
+        title: 'Not enough amenities',
+        description: `Only ${Math.round(stats.comfortSatisfaction * 100)}% comfort - add restrooms and benches`,
+        type: 'warning',
+      });
+    }
+
+    // Safety satisfaction warning
+    if (stats.safetySatisfaction < 0.6 && stats.currentGuests > 10) {
+      result.push({
+        emoji: '🛡️',
+        title: 'Guests feel unsafe',
+        description: `Only ${Math.round(stats.safetySatisfaction * 100)}% safety - add security and first aid`,
         type: 'warning',
       });
     }
@@ -485,6 +507,77 @@ export function StatsDashboard({ onClose }: Props) {
                     value={`${Math.round(stats.overallSatisfaction * 100)}%`}
                     trend={stats.overallSatisfaction >= 0.8 ? 'up' : stats.overallSatisfaction < 0.5 ? 'down' : 'neutral'}
                   />
+                </div>
+
+                {/* Guest Needs */}
+                <div className="bg-park-bg rounded-xl p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <span>💭</span> Guest Needs
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      {
+                        emoji: '🎢',
+                        label: 'Entertainment',
+                        value: stats.entertainmentSatisfaction,
+                        capacity: stats.rideCapacity,
+                        hint: 'rides',
+                      },
+                      {
+                        emoji: '🍔',
+                        label: 'Hunger',
+                        value: stats.hungerSatisfaction,
+                        capacity: stats.totalHungerCapacity,
+                        hint: 'food shops',
+                      },
+                      {
+                        emoji: '🚻',
+                        label: 'Comfort',
+                        value: stats.comfortSatisfaction,
+                        capacity: stats.totalComfortCapacity,
+                        hint: 'restrooms, benches',
+                      },
+                      {
+                        emoji: '🛡️',
+                        label: 'Safety',
+                        value: stats.safetySatisfaction,
+                        capacity: stats.totalSafetyCapacity,
+                        hint: 'security, first aid',
+                      },
+                    ].map((need) => {
+                      const percent = Math.round(need.value * 100);
+                      const color = percent >= 80 ? 'bg-park-success' : percent >= 50 ? 'bg-park-warning' : 'bg-park-danger';
+                      return (
+                        <div key={need.label}>
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <div className="flex items-center gap-2">
+                              <span>{need.emoji}</span>
+                              <span className="text-park-muted">{need.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-park-muted">{need.capacity} capacity</span>
+                              <span className={`font-medium ${
+                                percent >= 80 ? 'text-park-success' : percent >= 50 ? 'text-park-warning' : 'text-park-danger'
+                              }`}>
+                                {percent}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-park-muted/20 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percent}%` }}
+                              transition={{ duration: 0.5 }}
+                              className={`h-full rounded-full ${color}`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-park-muted/20 text-xs text-park-muted text-center">
+                    Low satisfaction makes guests leave faster
+                  </div>
                 </div>
 
                 {/* Building Summary */}

@@ -44,38 +44,50 @@ export function SlotDetail({ slot, onClose }: Props) {
       const nextCap = Math.floor((building.rideCapacity ?? 0) * nextMultiplier);
       return {
         current: [
-          { label: 'Attracts', value: currentPrestige, unit: ' guests' },
-          { label: 'Fits', value: currentCap, unit: ' at once' },
+          { label: '⭐ Prestige', value: currentPrestige, unit: '' },
+          { label: '🎠 Entertainment', value: currentCap, unit: ' guests' },
         ],
         gains: [
-          { label: 'Attracts', gain: nextPrestige - currentPrestige, isMoney: false },
-          { label: 'Fits', gain: nextCap - currentCap, isMoney: false },
+          { label: 'Prestige', gain: nextPrestige - currentPrestige, isMoney: false },
+          { label: 'Entertainment', gain: nextCap - currentCap, isMoney: false },
         ],
       };
     }
     if (building.category === 'shop') {
       const currentRate = (building.spendingRate ?? 0) * currentMultiplier;
       const nextRate = (building.spendingRate ?? 0) * nextMultiplier;
-      return {
-        current: [
-          { label: 'Earns', value: formatMoney(currentRate), unit: '/guest' },
-        ],
-        gains: [
-          { label: 'Earns', gain: nextRate - currentRate, isMoney: true },
-        ],
-      };
+      const current: { label: string; value: string | number; unit: string }[] = [];
+      const gains: { label: string; gain: number; isMoney: boolean }[] = [];
+
+      if (building.hungerCapacity) {
+        const currentHunger = Math.floor(building.hungerCapacity * currentMultiplier);
+        const nextHunger = Math.floor(building.hungerCapacity * nextMultiplier);
+        current.push({ label: '🍔 Feeds', value: currentHunger, unit: ' guests' });
+        gains.push({ label: 'Feeds', gain: nextHunger - currentHunger, isMoney: false });
+      }
+      current.push({ label: '💵 Earns', value: formatMoney(currentRate), unit: '/guest' });
+      gains.push({ label: 'Earns', gain: nextRate - currentRate, isMoney: true });
+
+      return { current, gains };
     }
     if (building.category === 'infrastructure') {
-      const currentCov = Math.floor((building.coverage ?? 0) * currentMultiplier);
-      const nextCov = Math.floor((building.coverage ?? 0) * nextMultiplier);
-      return {
-        current: [
-          { label: 'Keeps happy', value: currentCov, unit: ' guests' },
-        ],
-        gains: [
-          { label: 'Keeps happy', gain: nextCov - currentCov, isMoney: false },
-        ],
-      };
+      const current: { label: string; value: string | number; unit: string }[] = [];
+      const gains: { label: string; gain: number; isMoney: boolean }[] = [];
+
+      if (building.comfortCapacity) {
+        const currentComfort = Math.floor(building.comfortCapacity * currentMultiplier);
+        const nextComfort = Math.floor(building.comfortCapacity * nextMultiplier);
+        current.push({ label: '🚻 Comfort', value: currentComfort, unit: ' guests' });
+        gains.push({ label: 'Comfort', gain: nextComfort - currentComfort, isMoney: false });
+      }
+      if (building.safetyCapacity) {
+        const currentSafety = Math.floor(building.safetyCapacity * currentMultiplier);
+        const nextSafety = Math.floor(building.safetyCapacity * nextMultiplier);
+        current.push({ label: '🛡️ Safety', value: currentSafety, unit: ' guests' });
+        gains.push({ label: 'Safety', gain: nextSafety - currentSafety, isMoney: false });
+      }
+
+      return { current, gains };
     }
     return { current: [], gains: [] };
   };

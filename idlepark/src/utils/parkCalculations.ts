@@ -15,6 +15,14 @@ type ParkInputs = {
   currentGuests: number;
 };
 
+// Weights for overall satisfaction calculation
+const SATISFACTION_WEIGHTS = {
+  entertainment: 0.35,  // Rides are most important
+  hunger: 0.25,         // Food is essential
+  comfort: 0.20,        // Nice to have
+  safety: 0.20,         // Peace of mind
+};
+
 /**
  * Calculate all park stats from current state.
  * Pure function - no side effects.
@@ -29,7 +37,9 @@ export function calculateParkStats(inputs: ParkInputs): ParkStats {
   let reputation = 0;
   let rideCapacity = 0;
   let totalSpendingRate = 0;
-  let infrastructureCoverage = 0;
+  let totalHungerCapacity = 0;
+  let totalComfortCapacity = 0;
+  let totalSafetyCapacity = 0;
   let totalMaintenance = 0;
 
   for (const slot of slots) {
@@ -46,8 +56,10 @@ export function calculateParkStats(inputs: ParkInputs): ParkStats {
       rideCapacity += Math.floor((def.rideCapacity ?? 0) * levelMultiplier);
     } else if (def.category === 'shop') {
       totalSpendingRate += (def.spendingRate ?? 0) * levelMultiplier;
+      totalHungerCapacity += Math.floor((def.hungerCapacity ?? 0) * levelMultiplier);
     } else if (def.category === 'infrastructure') {
-      infrastructureCoverage += Math.floor((def.coverage ?? 0) * levelMultiplier);
+      totalComfortCapacity += Math.floor((def.comfortCapacity ?? 0) * levelMultiplier);
+      totalSafetyCapacity += Math.floor((def.safetyCapacity ?? 0) * levelMultiplier);
     }
   }
 
@@ -57,16 +69,36 @@ export function calculateParkStats(inputs: ParkInputs): ParkStats {
   // Target guests: reputation * demand (capped at max)
   const targetGuests = Math.min(reputation * demandMultiplier, maxGuests);
 
-  // Satisfaction calculations
-  const rideSatisfaction = currentGuests > 0
+  // === 4 Core Guest Needs ===
+  // Each is capacity / guests, capped at 1.0
+  // When there are no guests, satisfaction is 100%
+
+  const entertainmentSatisfaction = currentGuests > 0
     ? Math.min(1, rideCapacity / currentGuests)
     : 1;
 
-  const facilitySatisfaction = currentGuests > 0
-    ? Math.min(1, infrastructureCoverage / currentGuests)
+  const hungerSatisfaction = currentGuests > 0
+    ? Math.min(1, totalHungerCapacity / currentGuests)
     : 1;
 
-  const overallSatisfaction = (rideSatisfaction + facilitySatisfaction) / 2;
+  const comfortSatisfaction = currentGuests > 0
+    ? Math.min(1, totalComfortCapacity / currentGuests)
+    : 1;
+
+  const safetySatisfaction = currentGuests > 0
+    ? Math.min(1, totalSafetyCapacity / currentGuests)
+    : 1;
+
+  // Weighted overall satisfaction
+  const overallSatisfaction =
+    entertainmentSatisfaction * SATISFACTION_WEIGHTS.entertainment +
+    hungerSatisfaction * SATISFACTION_WEIGHTS.hunger +
+    comfortSatisfaction * SATISFACTION_WEIGHTS.comfort +
+    safetySatisfaction * SATISFACTION_WEIGHTS.safety;
+
+  // Legacy aliases for backward compatibility
+  const rideSatisfaction = entertainmentSatisfaction;
+  const facilitySatisfaction = (comfortSatisfaction + safetySatisfaction) / 2;
 
   // Income rates (per second)
   const ticketIncome = reputation * demandMultiplier * GUEST_ARRIVAL_RATE * ticketPrice;
@@ -76,14 +108,20 @@ export function calculateParkStats(inputs: ParkInputs): ParkStats {
   return {
     maxGuests,
     rideCapacity: Math.floor(rideCapacity),
-    infrastructureCoverage: Math.floor(infrastructureCoverage),
+    totalHungerCapacity: Math.floor(totalHungerCapacity),
+    totalComfortCapacity: Math.floor(totalComfortCapacity),
+    totalSafetyCapacity: Math.floor(totalSafetyCapacity),
     reputation: Math.floor(reputation),
     demandMultiplier,
     targetGuests: Math.floor(targetGuests),
     currentGuests,
+    entertainmentSatisfaction,
+    hungerSatisfaction,
+    comfortSatisfaction,
+    safetySatisfaction,
+    overallSatisfaction,
     rideSatisfaction,
     facilitySatisfaction,
-    overallSatisfaction,
     ticketIncome,
     shopIncome,
     totalMaintenance,

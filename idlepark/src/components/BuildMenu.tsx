@@ -27,13 +27,19 @@ export function BuildMenu({ slotIndex, onClose }: Props) {
 
   const getStatLabel = (building: BuildingDefinition) => {
     if (building.category === 'ride') {
-      return `Attracts ${building.prestige} • Fits ${building.rideCapacity}`;
+      return `⭐ ${building.prestige} prestige • 🎠 Fits ${building.rideCapacity}`;
     }
     if (building.category === 'shop') {
-      return `Earns ${formatMoney(building.spendingRate ?? 0)}/guest`;
+      const parts: string[] = [];
+      if (building.hungerCapacity) parts.push(`🍔 Feeds ${building.hungerCapacity}`);
+      parts.push(`💵 ${formatMoney(building.spendingRate ?? 0)}/guest`);
+      return parts.join(' • ');
     }
     if (building.category === 'infrastructure') {
-      return `Keeps ${building.coverage} guests happy`;
+      const parts: string[] = [];
+      if (building.comfortCapacity) parts.push(`🚻 Comfort ${building.comfortCapacity}`);
+      if (building.safetyCapacity) parts.push(`🛡️ Safety ${building.safetyCapacity}`);
+      return parts.join(' • ') || 'Park amenity';
     }
     return '';
   };
